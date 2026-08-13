@@ -51,8 +51,18 @@ Then route the `medium` tier in `config/rick.php`:
 ```
 
 After changing `.env` or configuration, run `php artisan config:clear`.
+
+Laravel Rick routes through every text provider supported by the installed
+Laravel AI SDK. With Laravel AI 0.10, that includes OpenAI, OpenAI Compatible,
+Anthropic, Gemini, Azure OpenAI, Amazon Bedrock, Groq, xAI, DeepSeek, Mistral,
+Ollama, and OpenRouter. Structured workflows also require a selected model
+that supports structured output. OpenRouter is live-tested by this package;
+Gemini structured schemas are covered by regression fixtures. Other providers
+use the same adapter but are not yet live-tested by the package.
+
 See [Installation and configuration](docs/installation.md) for all model tiers,
-other Laravel AI providers, cost notes, and troubleshooting.
+provider credentials, cost notes, and troubleshooting. Laravel AI maintains
+the current [provider support matrix](https://laravel.com/docs/13.x/ai-sdk#provider-support).
 
 ## Quick start
 

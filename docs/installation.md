@@ -90,6 +90,22 @@ credential expected by the
 transport configuration; Laravel Rick owns workflow routing, persistence,
 budgets, metrics, and recovery.
 
+Laravel Rick does not maintain a separate provider allowlist: it passes the
+configured route to Laravel AI. It therefore supports every text provider
+available in the installed Laravel AI SDK. With Laravel AI 0.10, the text
+providers are OpenAI, OpenAI Compatible, Anthropic, Gemini, Azure OpenAI,
+Amazon Bedrock, Groq, xAI, DeepSeek, Mistral, Ollama, and OpenRouter. See the
+current Laravel AI [provider support matrix](https://laravel.com/docs/13.x/ai-sdk#provider-support).
+
+This compatibility applies to text generation. Cohere, Jina, and VoyageAI
+features such as embeddings and reranking, and ElevenLabs audio features, are
+not exposed by Laravel Rick. Structured workflow steps additionally require a
+selected model that can satisfy the requested structured output schema.
+OpenRouter is exercised by the package's live smoke test, while Gemini schema
+translation is covered by regression fixtures. The remaining text providers
+route through the same Laravel AI adapter but are not yet live-tested by this
+package.
+
 ### Common setup failures
 
 - An authentication failure usually means the provider credential is missing
