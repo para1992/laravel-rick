@@ -86,6 +86,67 @@ echo $run->output();
 Longer workflows can generate candidates, pause for human input, run in
 parallel, enforce quality gates, verify grounding, and resume through queues.
 
+## Typical tasks
+
+The examples below assume `$rick = app(Rick::class)`.
+
+### Generate content within a fixed budget
+
+```php
+$workflow = $rick->workflow('product-description')
+    ->budget(maxCostUsd: '0.10')
+    ->resolve('Write a product description.', 'A concise description is ready.')
+    ->context('product')
+    ->generate('description', outputKey: 'description')
+    ->outputGlue('description')
+    ->build();
+
+$run = $rick->run($workflow, ['product' => $product]);
+```
+
+### Process a list through queues
+
+```php
+$workflow = $rick->workflow('ticket-summaries')
+    ->resolve('Summarize every support ticket.', 'Every ticket has a summary.')
+    ->context('tickets')
+    ->map('tickets', 'items', 'rick.text', 'summaries', maxItems: 100)
+    ->outputGlue('summaries')
+    ->build();
+
+$run = $rick->schedule($workflow, ['tickets' => ['items' => $tickets]]);
+```
+
+### Generate variants and let a person choose
+
+```php
+$workflow = $rick->workflow('campaign-copy')
+    ->resolve('Write campaign copy.', 'Three distinct drafts are ready.')
+    ->draft(candidates: 3)
+    ->manualJudge()
+    ->outputGlue('draft')
+    ->build();
+
+$run = $rick->run($workflow);
+$review = $rick->pendingReview($run->id);
+$rick->selectCandidate($run->id, $review->candidates[0]->id);
+```
+
+### Verify an answer against supplied evidence
+
+```php
+$workflow = $rick->workflow('grounded-answer')
+    ->resolve('Answer the question from the evidence.', 'Every claim is grounded.')
+    ->context('question')
+    ->context('evidence')
+    ->generate('answer', outputKey: 'answer', reads: ['question', 'evidence'])
+    ->groundedVerify('answer', ['evidence'], output: 'verified')
+    ->outputGlue('verified')
+    ->build();
+
+$run = $rick->run($workflow, compact('question', 'evidence'));
+```
+
 ## Documentation
 
 - [Installation and configuration](docs/installation.md)
