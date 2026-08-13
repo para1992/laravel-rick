@@ -7,7 +7,13 @@ runs. It supports synchronous and queued execution, Laravel AI calls, manual
 review and input, encrypted persistence, budgets, metrics, recovery, and a
 transactional outbox.
 
-![Laravel Rick durable workflow demo](https://github.com/para1992/laravel-rick/releases/download/v0.1.0/laravel-rick-demo.gif)
+[![Laravel Rick durable workflow demo](https://github.com/para1992/laravel-rick/releases/download/v0.1.0/laravel-rick-demo.gif)](https://github.com/para1992/laravel-rick-demo)
+
+## Demo
+
+[Run the human-in-the-loop demo](https://github.com/para1992/laravel-rick-demo)
+to generate five candidates, pause for a human decision, and continue with the
+selected result. It uses a deterministic provider, so no API key is required.
 
 ## Installation
 
