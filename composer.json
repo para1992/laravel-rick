@@ -1,0 +1,158 @@
+{
+    "name": "rickphp/laravel-rick",
+    "description": "Durable, tenant-aware AI workflow compilation and execution for Laravel",
+    "keywords": [
+        "ai",
+        "laravel",
+        "llm",
+        "outbox",
+        "workflow"
+    ],
+    "homepage": "https://github.com/para1992/laravel-rick",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "RickPHP contributors"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/para1992/laravel-rick/issues",
+        "source": "https://github.com/para1992/laravel-rick"
+    },
+    "require": {
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "php": "^8.3",
+        "illuminate/contracts": "^12.0|^13.0",
+        "illuminate/database": "^12.0|^13.0",
+        "illuminate/events": "^12.0|^13.0",
+        "illuminate/pipeline": "^12.0|^13.0",
+        "illuminate/queue": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "laravel/ai": "^0.9.1 || ^0.10.0",
+        "opis/json-schema": "^2.6"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.10",
+        "laravel/pint": "^1.24",
+        "orchestra/testbench": "^10.0|^11.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-mutate": "^4.0",
+        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "predis/predis": "^2.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rick\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rick\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "qa": [
+            "@qa:validate",
+            "@qa:security",
+            "@qa:style",
+            "@qa:analyse",
+            "@qa:test",
+            "@stand-fast"
+        ],
+        "qa:validate": "composer validate --strict",
+        "qa:security": "composer audit",
+        "qa:style": "pint --test",
+        "qa:analyse": "phpstan analyse --configuration phpstan.neon --memory-limit=1G --no-progress",
+        "qa:test": "@php -d memory_limit=1G vendor/bin/pest",
+        "qa:coverage": [
+            "@php -d memory_limit=1G vendor/bin/pest --coverage --coverage-clover=build/coverage.xml",
+            "@php tools/check-coverage.php build/coverage.xml 90 80"
+        ],
+        "qa:archive": [
+            "@php tools/prepare-archive.php",
+            "composer archive --format=tar --file=laravel-rick --dir=build/archive",
+            "@php tools/verify-archive.php build/archive/laravel-rick.tar"
+        ],
+        "regression": "@php -d memory_limit=1G vendor/bin/pest --configuration phpunit.regression.xml",
+        "smoke:live": "@php -d memory_limit=1G vendor/bin/phpunit --configuration phpunit.live.xml --colors=always",
+        "stand-fast": "@php tools/test-stand/bin/rick-stand run",
+        "stand-full": "@php tools/test-stand/bin/rick-stand run --lane=full",
+        "stand-archive": "@php tools/test-stand/bin/rick-stand run --target=archive",
+        "stand-mutation": "@php tools/test-stand/bin/rick-stand mutate",
+        "stand": [
+            "@stand-fast",
+            "@stand-full",
+            "@stand-archive"
+        ],
+        "test": "@qa:test",
+        "analyse": "@qa:analyse",
+        "style": "@qa:style",
+        "style:fix": "pint"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rick\\Laravel\\RickServiceProvider"
+            ]
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/.DS_Store",
+            "/.composer-cache",
+            "/.env",
+            "/.env.local",
+            "/.env.testing",
+            "/.gitea",
+            "/.github",
+            "/.idea",
+            "/.local-ci",
+            "/.local.qa",
+            "/.pest.cache",
+            "/.playwright-mcp",
+            "/.phpstan.cache",
+            "/.phpunit.cache",
+            "/.vscode",
+            "/benchmark-results",
+            "/build",
+            "/coverage",
+            "/graphify-out",
+            "/local-ci",
+            "/rick-reliability-lab-ready.png",
+            "/tests",
+            "/tests-live",
+            "/tools",
+            "/vendor",
+            "/*.log",
+            "/.editorconfig",
+            "/.gitattributes",
+            "/.gitignore",
+            "/AGENTS.md",
+            "/auth.json",
+            "/CODE_OF_CONDUCT.md",
+            "/composer.phar",
+            "/CONTRIBUTING.md",
+            "/Makefile",
+            "/SECURITY.md",
+            "/capabilities.json",
+            "/composer.lock",
+            "/docker-compose.local-ci.colima.yml",
+            "/docker-compose.local-ci.yml",
+            "/phpstan.neon",
+            "/phpunit.live.xml",
+            "/phpunit.regression.xml",
+            "/phpunit.xml",
+            "/pint.json",
+            "/regression.json"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    }
+}

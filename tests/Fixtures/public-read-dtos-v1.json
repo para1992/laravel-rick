@@ -1,0 +1,202 @@
+{
+    "snapshot": {
+        "schema_version": 1,
+        "id": "run-transport-1",
+        "status": "completed",
+        "version": 7,
+        "input": {
+            "subject": "Laravel"
+        },
+        "task": "Write a draft",
+        "definition_of_done": {
+            "automatic": false,
+            "value": "The draft is concise"
+        },
+        "contexts": [
+            {
+                "schema_version": 1,
+                "key": "brief",
+                "content": "Brief",
+                "original_characters": 8,
+                "included_characters": 5,
+                "truncated": true
+            }
+        ],
+        "current_candidates": [],
+        "accepted_candidates": [
+            {
+                "schema_version": 1,
+                "id": "candidate-1",
+                "step_id": "002_generate",
+                "artifact": "draft",
+                "title": "Candidate 1",
+                "summary": "Summary",
+                "payload": {
+                    "rank": 1
+                },
+                "content": "Draft",
+                "seed": {
+                    "random_string": "seed-1",
+                    "interpretation": "independent candidate generation"
+                },
+                "metadata": {
+                    "output_key": "draft"
+                }
+            }
+        ],
+        "decisions": [
+            {
+                "schema_version": 1,
+                "step_id": "002_generate",
+                "selected_candidate_id": "candidate-1",
+                "score": 91.5,
+                "reason": "Best candidate",
+                "policy": "manual",
+                "selection_seed": null
+            }
+        ],
+        "step_states": {
+            "002_generate": {
+                "state": "done"
+            }
+        },
+        "raw_output": null,
+        "ai_output": "Draft",
+        "output": "Draft",
+        "calls_used": 1,
+        "call_limit": 5,
+        "artifacts": {
+            "draft": {
+                "schema_version": 1,
+                "key": "draft",
+                "type": "draft",
+                "content": "Draft",
+                "payload": {
+                    "rank": 1
+                },
+                "metadata": {
+                    "source": "selected_candidate"
+                },
+                "version": 2
+            }
+        },
+        "resource_budget": {
+            "schema_version": 1,
+            "max_input_tokens": 100,
+            "max_output_tokens": 50,
+            "max_total_tokens": 150,
+            "max_cost_usd": "0.25",
+            "max_latency_milliseconds": 2500,
+            "max_duration_milliseconds": 10000,
+            "default_output_reservation_tokens": 64,
+            "require_complete_metrics": true,
+            "require_known_pricing": false
+        },
+        "started_at": "2026-08-01T12:34:56+00:00"
+    },
+    "pending_review": {
+        "schema_version": 1,
+        "exists": true,
+        "step_id": "002_generate",
+        "candidates": [
+            {
+                "schema_version": 1,
+                "id": "candidate-1",
+                "step_id": "002_generate",
+                "artifact": "draft",
+                "title": "Candidate 1",
+                "summary": "Summary",
+                "payload": {
+                    "rank": 1
+                },
+                "content": "Draft",
+                "seed": {
+                    "random_string": "seed-1",
+                    "interpretation": "independent candidate generation"
+                },
+                "metadata": {
+                    "output_key": "draft"
+                }
+            }
+        ]
+    },
+    "pending_input": {
+        "schema_version": 1,
+        "exists": true,
+        "step_id": "003_approval",
+        "key": "approval",
+        "prompt": "Approve?",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "approved": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "approved"
+            ]
+        }
+    },
+    "candidate": {
+        "schema_version": 1,
+        "id": "candidate-1",
+        "step_id": "002_generate",
+        "artifact": "draft",
+        "title": "Candidate 1",
+        "summary": "Summary",
+        "payload": {
+            "rank": 1
+        },
+        "content": "Draft",
+        "seed": {
+            "random_string": "seed-1",
+            "interpretation": "independent candidate generation"
+        },
+        "metadata": {
+            "output_key": "draft"
+        }
+    },
+    "artifact": {
+        "schema_version": 1,
+        "key": "draft",
+        "type": "draft",
+        "content": "Draft",
+        "payload": {
+            "rank": 1
+        },
+        "metadata": {
+            "source": "selected_candidate"
+        },
+        "version": 2
+    },
+    "context": {
+        "schema_version": 1,
+        "key": "brief",
+        "content": "Brief",
+        "original_characters": 8,
+        "included_characters": 5,
+        "truncated": true
+    },
+    "decision": {
+        "schema_version": 1,
+        "step_id": "002_generate",
+        "selected_candidate_id": "candidate-1",
+        "score": 91.5,
+        "reason": "Best candidate",
+        "policy": "manual",
+        "selection_seed": null
+    },
+    "resource_budget": {
+        "schema_version": 1,
+        "max_input_tokens": 100,
+        "max_output_tokens": 50,
+        "max_total_tokens": 150,
+        "max_cost_usd": "0.25",
+        "max_latency_milliseconds": 2500,
+        "max_duration_milliseconds": 10000,
+        "default_output_reservation_tokens": 64,
+        "require_complete_metrics": true,
+        "require_known_pricing": false
+    }
+}

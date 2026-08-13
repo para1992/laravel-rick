@@ -1,0 +1,273 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+env:
+  COMPOSER_ALLOW_SUPERUSER: "1"
+  COMPOSER_AUTH: "{}"
+  COMPOSER_NO_INTERACTION: "1"
+
+jobs:
+  quality:
+    name: Deterministic quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 job
+        run: apk add --no-cache make
+      - name: Validate Composer metadata
+        run: make qa-validate
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Install standalone consumer stand
+        run: composer --working-dir=tools/test-stand install --prefer-dist --no-interaction --no-progress
+      - name: Run deterministic quality suite
+        run: make qa
+
+  release-gates:
+    name: Regression, coverage, archive, and consumers
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 with PCOV
+        run: |
+          apk add --no-cache make $PHPIZE_DEPS linux-headers
+          pecl install pcov
+          docker-php-ext-enable pcov
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Install standalone consumer stand
+        run: composer --working-dir=tools/test-stand install --prefer-dist --no-interaction --no-progress
+      - name: Run standalone regression suite
+        run: make regression
+      - name: Run coverage gate
+        run: make coverage
+      - name: Run full deterministic stand with coverage evidence
+        run: make stand-full
+      - name: Build and verify release archive
+        run: make archive
+      - name: Verify archive through standalone consumer
+        run: make stand-archive
+      - name: Smoke-test Laravel 12 no-dev consumer
+        run: |
+          mkdir package consumer-12-root
+          tar -xf build/archive/laravel-rick.tar -C package
+          composer create-project --no-dev --prefer-dist --no-progress laravel/laravel:^12.0 consumer-12-root/application
+          cd consumer-12-root/application
+          composer config repositories.rick '{"type":"path","url":"../../package","options":{"symlink":false}}'
+          composer require --update-no-dev --with-all-dependencies --no-progress rickphp/laravel-rick:@dev
+          php artisan list --raw | grep '^rick:'
+      - name: Smoke-test Laravel 13 no-dev consumer
+        run: |
+          mkdir consumer-13-root
+          composer create-project --no-dev --prefer-dist --no-progress laravel/laravel:^13.0 consumer-13-root/application
+          cd consumer-13-root/application
+          composer config repositories.rick '{"type":"path","url":"../../package","options":{"symlink":false}}'
+          composer require --update-no-dev --with-all-dependencies --no-progress rickphp/laravel-rick:@dev
+          php artisan list --raw | grep '^rick:'
+
+  compatibility:
+    name: PHP 8.5 / Laravel and Laravel AI dependency matrix
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 job
+        run: apk add --no-cache make
+      - name: Run Laravel 12/13 and Laravel AI 0.9/0.10 matrix
+        run: make test-matrix
+
+  database-mysql:
+    name: SQLite and MySQL 8.4
+    needs:
+      - release-gates
+      - compatibility
+      - database-postgresql
+      - queues
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: rick
+          MYSQL_USER: rick
+          MYSQL_PASSWORD: rick
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 MySQL extension
+        run: |
+          apk add --no-cache make $PHPIZE_DEPS linux-headers
+          docker-php-ext-install -j1 pdo_mysql
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Run SQLite suite
+        env:
+          RICK_TEST_DB_DRIVER: sqlite
+        run: make qa-test
+      - name: Run MySQL suite
+        env:
+          RICK_TEST_DB_DRIVER: mysql
+          RICK_TEST_DB_HOST: 127.0.0.1
+          RICK_TEST_DB_PORT: "3306"
+          RICK_TEST_DB_DATABASE: rick
+          RICK_TEST_DB_USERNAME: rick
+          RICK_TEST_DB_PASSWORD: rick
+        run: make qa-test
+  database-mariadb:
+    name: MariaDB 11.4
+    needs: database-mysql
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: rick
+          MARIADB_USER: rick
+          MARIADB_PASSWORD: rick
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 MySQL extension
+        run: |
+          apk add --no-cache make $PHPIZE_DEPS linux-headers
+          docker-php-ext-install -j1 pdo_mysql
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Run MariaDB suite
+        env:
+          RICK_TEST_DB_DRIVER: mariadb
+          RICK_TEST_DB_HOST: 127.0.0.1
+          RICK_TEST_DB_PORT: "3306"
+          RICK_TEST_DB_DATABASE: rick
+          RICK_TEST_DB_USERNAME: rick
+          RICK_TEST_DB_PASSWORD: rick
+        run: make qa-test
+
+  database-postgresql:
+    name: PostgreSQL 17
+    needs: quality
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rick
+          POSTGRES_USER: rick
+          POSTGRES_PASSWORD: rick
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U rick -d rick"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 PostgreSQL extension
+        run: |
+          apk add --no-cache make $PHPIZE_DEPS linux-headers postgresql-dev
+          docker-php-ext-install -j1 pdo_pgsql
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Run PostgreSQL suite
+        env:
+          RICK_TEST_DB_DRIVER: pgsql
+          RICK_TEST_DB_HOST: 127.0.0.1
+          RICK_TEST_DB_PORT: "5432"
+          RICK_TEST_DB_DATABASE: rick
+          RICK_TEST_DB_USERNAME: rick
+          RICK_TEST_DB_PASSWORD: rick
+        run: make qa-test
+
+  queues:
+    name: Database, Redis, and SQS round trips
+    needs: quality
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+      localstack:
+        image: localstack/localstack:4.7.0
+        env:
+          SERVICES: sqs
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd="curl -fs http://localhost:4566/_localstack/health"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - name: Check out package
+        run: |
+          set -euo pipefail
+          git clone --depth 1 http://gitea:3000/local-ci/laravel-rick.git .
+      - name: Prepare PHP 8.5 job
+        run: apk add --no-cache make
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Install optional queue clients
+        run: composer require --dev --with-all-dependencies --no-progress predis/predis:^2.3 aws/aws-sdk-php:^3.0
+      - name: Create LocalStack queue
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          php -r 'require "vendor/autoload.php"; $client = new Aws\Sqs\SqsClient(["credentials" => ["key" => "test", "secret" => "test"], "endpoint" => "http://127.0.0.1:4566", "region" => "us-east-1", "version" => "latest"]); $client->createQueue(["QueueName" => "default"]);'
+      - name: Run database queue round trip
+        env:
+          RICK_TEST_QUEUE_DRIVER: database
+        run: make queue-round-trip
+      - name: Run concurrent SQLite queue selection smoke
+        run: make sqlite-queue-smoke
+      - name: Run Redis queue round trip
+        env:
+          RICK_TEST_QUEUE_DRIVER: redis
+          RICK_TEST_REDIS_HOST: 127.0.0.1
+          RICK_TEST_REDIS_PORT: "6379"
+        run: make queue-round-trip
+      - name: Run SQS queue round trip
+        env:
+          RICK_TEST_QUEUE_DRIVER: sqs
+          RICK_TEST_SQS_ENDPOINT: http://127.0.0.1:4566
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: make queue-round-trip

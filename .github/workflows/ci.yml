@@ -1,0 +1,251 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  COMPOSER_NO_INTERACTION: "1"
+  COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+
+jobs:
+  quality:
+    name: Quality, coverage, and archive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          coverage: pcov
+          tools: composer:v2
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+      - run: composer install --prefer-dist --no-progress
+      - run: composer --working-dir=tools/test-stand install --prefer-dist --no-progress
+      - run: composer qa:validate
+      - run: composer qa:security
+      - run: composer qa:style
+      - run: composer qa:analyse
+      - run: composer regression
+      - run: make stand-fast
+      - run: composer qa:coverage
+      - run: composer qa:archive
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-and-release-archive
+          path: |
+            build/coverage.xml
+            build/archive/laravel-rick.tar
+            build/test-stand/latest
+
+  compatibility:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / Laravel AI ${{ matrix.ai }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.3", "8.4", "8.5"]
+        laravel: ["12", "13"]
+        ai: ["0.9.1", "0.10.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - name: Pin Laravel compatibility lane
+        run: |
+          if [ "${{ matrix.laravel }}" = "12" ]; then
+            testbench='^10.0'
+          else
+            testbench='^11.0'
+          fi
+          composer require --no-update \
+            "illuminate/contracts:^${{ matrix.laravel }}.0" \
+            "illuminate/database:^${{ matrix.laravel }}.0" \
+            "illuminate/events:^${{ matrix.laravel }}.0" \
+            "illuminate/pipeline:^${{ matrix.laravel }}.0" \
+            "illuminate/queue:^${{ matrix.laravel }}.0" \
+            "illuminate/support:^${{ matrix.laravel }}.0" \
+            "laravel/ai:^${{ matrix.ai }}" \
+            "orchestra/testbench:${testbench}"
+      - name: Install dependency lane
+        run: |
+          if [ "${{ matrix.ai }}" = "0.9.1" ]; then
+            composer update --prefer-lowest --prefer-stable --with-all-dependencies --no-progress
+          else
+            composer update --with-all-dependencies --no-progress
+          fi
+      - run: composer qa:analyse
+      - run: composer qa:test
+      - run: make stand-fast
+
+  databases:
+    name: Database ${{ matrix.database }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, mysql, mariadb, pgsql]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: rick
+          MYSQL_USER: rick
+          MYSQL_PASSWORD: rick
+          MYSQL_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: rick
+          MARIADB_USER: rick
+          MARIADB_PASSWORD: rick
+          MARIADB_ROOT_PASSWORD: root
+        ports: ["3307:3306"]
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rick
+          POSTGRES_USER: rick
+          POSTGRES_PASSWORD: rick
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U rick -d rick"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: mbstring, pdo_mysql, pdo_pgsql, sqlite3
+          coverage: none
+          tools: composer:v2
+      - run: composer install --prefer-dist --no-progress
+      - name: Run database suite
+        env:
+          RICK_TEST_DB_DRIVER: ${{ matrix.database }}
+          RICK_TEST_DB_HOST: 127.0.0.1
+          RICK_TEST_DB_PORT: ${{ matrix.database == 'pgsql' && '5432' || matrix.database == 'mariadb' && '3307' || '3306' }}
+          RICK_TEST_DB_DATABASE: rick
+          RICK_TEST_DB_USERNAME: rick
+          RICK_TEST_DB_PASSWORD: rick
+        run: composer qa:test
+
+  queues:
+    name: Queue ${{ matrix.queue }} round trip
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        queue: [database, redis, sqs]
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+      localstack:
+        image: localstack/localstack:4.7.0
+        env:
+          SERVICES: sqs
+        ports: ["4566:4566"]
+        options: >-
+          --health-cmd="curl -fs http://localhost:4566/_localstack/health"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          coverage: none
+          tools: composer:v2
+      - run: composer install --prefer-dist --no-progress
+      - name: Install optional queue clients
+        run: composer require --dev --with-all-dependencies --no-progress predis/predis:^2.3 aws/aws-sdk-php:^3.0
+      - name: Create LocalStack queue
+        if: matrix.queue == 'sqs'
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: aws --endpoint-url=http://127.0.0.1:4566 sqs create-queue --queue-name default
+      - name: Run real queue round trip
+        env:
+          RICK_TEST_QUEUE_DRIVER: ${{ matrix.queue }}
+          RICK_TEST_REDIS_HOST: 127.0.0.1
+          RICK_TEST_REDIS_PORT: "6379"
+          RICK_TEST_SQS_ENDPOINT: http://127.0.0.1:4566
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: make queue-round-trip
+      - name: Run concurrent SQLite queue selection smoke
+        if: matrix.queue == 'database'
+        run: make sqlite-queue-smoke
+
+  archive-consumer:
+    name: Archive consumer / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel: ["12", "13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          coverage: none
+          tools: composer:v2
+      - run: composer install --prefer-dist --no-progress
+      - run: composer qa:archive
+      - run: composer --working-dir=tools/test-stand install --prefer-dist --no-progress
+      - run: make stand-archive
+      - name: Install archive in a no-dev Laravel consumer
+        run: |
+          mkdir package
+          tar -xf build/archive/laravel-rick.tar -C package
+          composer create-project --no-dev --prefer-dist --no-progress \
+            "laravel/laravel:^${{ matrix.laravel }}.0" consumer
+          cd consumer
+          composer config repositories.rick '{"type":"path","url":"../package","options":{"symlink":false}}'
+          composer require --update-no-dev --with-all-dependencies --no-progress rickphp/laravel-rick:@dev
+          php artisan list --raw | grep '^rick:'
+
+  full-stand:
+    name: Full deterministic stand gate
+    needs: [compatibility, databases, queues, archive-consumer]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          coverage: pcov
+          tools: composer:v2
+      - run: composer install --prefer-dist --no-progress
+      - run: composer --working-dir=tools/test-stand install --prefer-dist --no-progress
+      - run: composer qa:coverage
+      - run: make stand-full
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-test-stand-report
+          path: build/test-stand/latest

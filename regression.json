@@ -1,0 +1,247 @@
+{
+    "schema_version": 1,
+    "suite": "Regression",
+    "lanes": {
+        "contract": [
+            "tests/RegressionManifestTest.php",
+            "tests/Feature/RickTest.php",
+            "tests/Feature/OrchestrationExecutionTest.php",
+            "tests/Feature/PackageBootTest.php",
+            "tests/Feature/LaravelAiGatewayTest.php",
+            "tests/Feature/PublishedConfigTest.php"
+        ],
+        "workflow": [
+            "tests/Feature/PublicExecutionFlowTest.php",
+            "tests/Feature/ObservabilityReadModelTest.php"
+        ],
+        "queue": [
+            "tests/Feature/QueueExecutionBackendTest.php",
+            "tests/Feature/TenantOperationsTest.php"
+        ],
+        "resilience": [
+            "tests/Feature/PricingConfigurationTest.php",
+            "tests/Feature/PersistenceBoundaryTest.php",
+            "tests/Feature/LegacyDataMigrationTest.php",
+            "tests/Feature/MigrationPortabilityTest.php",
+            "tests/Feature/ProviderOutcomeTest.php",
+            "tests/Feature/StructuredResponseRecoveryTest.php",
+            "tests/Feature/RecoveryBatchTest.php",
+            "tests/Feature/RetentionTest.php",
+            "tests/Feature/SqliteQueueProfileTest.php",
+            "tests/Feature/ScopedLifecycleTest.php",
+            "tests/Feature/TransactionOutboxReliabilityTest.php",
+            "tests/Unit/Domain/LaravelAiFailureClassifierTest.php"
+        ],
+        "invariants": [
+            "tests/Unit/Domain/CompletionResponseSchemaTest.php",
+            "tests/Unit/Domain/ExecutionDomainTest.php",
+            "tests/Unit/Domain/FakeGatewayTest.php",
+            "tests/Unit/Domain/IdentifierTest.php",
+            "tests/Unit/Domain/PricingTest.php",
+            "tests/Unit/Domain/PromptBoundsTest.php",
+            "tests/Unit/Domain/PublicReadDtoTest.php",
+            "tests/Unit/Infrastructure/Configuration/RickConfigurationTest.php",
+            "tests/Unit/Infrastructure/Schema/JsonSchemaValidatorTest.php"
+        ],
+        "documentation": [
+            "tests/Feature/ReadmeQuickStartTest.php"
+        ]
+    },
+    "capabilities": {
+        "workflow.compilation": [
+            "Rick\\Laravel\\Tests\\Feature\\RickTest::test_it_compiles_a_domain_workflow_through_dependency_injection",
+            "Rick\\Laravel\\Tests\\Feature\\OrchestrationExecutionTest::test_orchestration_compiles_a_workflow_and_starts_its_run"
+        ],
+        "workflow.resolve": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_public_run_reaches_terminal_state_and_exposes_snapshot_and_metrics"
+        ],
+        "workflow.raw_prompt": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_raw_prompt_performs_one_unwrapped_call_and_exposes_budget_metrics"
+        ],
+        "workflow.define_dod": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_define_dod_unfold_parallel_and_edit_strategies_reduce_responses"
+        ],
+        "workflow.context": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_registered_llm_operation_uses_model_policy_and_produces_artifact"
+        ],
+        "workflow.generate": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_structured_invocation_metrics_and_manual_selection_complete_the_run",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_five_generated_plans_pause_for_manual_selection_and_return_the_selected_plan"
+        ],
+        "workflow.unfold": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_unfold_processes_units_sequentially_and_commits_working_memory",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_unfold_manual_judge_resumes_each_unit_without_completing_the_step_early"
+        ],
+        "workflow.judge.manual": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_structured_invocation_metrics_and_manual_selection_complete_the_run",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_five_generated_plans_pause_for_manual_selection_and_return_the_selected_plan",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_unfold_manual_judge_resumes_each_unit_without_completing_the_step_early"
+        ],
+        "workflow.edit": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_define_dod_unfold_parallel_and_edit_strategies_reduce_responses"
+        ],
+        "workflow.output_glue": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_join_and_branch_use_the_compiled_artifact_graph"
+        ],
+        "workflow.operation": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_registered_llm_operation_uses_model_policy_and_produces_artifact"
+        ],
+        "workflow.quality_gate": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_quality_rule_set_produces_a_persisted_report",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_quality_gate_honours_the_configured_bounded_repair_count"
+        ],
+        "workflow.grounded_verify": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_grounded_verification_persists_evidence_report",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_fabricated_grounding_quote_fails_the_run_with_a_persisted_report"
+        ],
+        "workflow.parallel": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_define_dod_unfold_parallel_and_edit_strategies_reduce_responses",
+            "Rick\\Laravel\\Tests\\Feature\\QueueExecutionBackendTest::test_parallel_queue_invocations_are_order_stable_and_duplicate_delivery_is_idempotent"
+        ],
+        "workflow.map": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_map_fans_out_and_reduces_collection_payload"
+        ],
+        "workflow.join": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_join_and_branch_use_the_compiled_artifact_graph"
+        ],
+        "workflow.branch": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_join_and_branch_use_the_compiled_artifact_graph"
+        ],
+        "workflow.wait_for_input": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_public_external_input_flow_persists_an_artifact_and_continues_by_job"
+        ],
+        "persistence.tenant_isolation": [
+            "Rick\\Laravel\\Tests\\Feature\\PersistenceBoundaryTest::test_repository_is_tenant_scoped"
+        ],
+        "persistence.encrypted_payloads": [
+            "Rick\\Laravel\\Tests\\Feature\\PersistenceBoundaryTest::test_run_state_round_trips_through_encrypted_versioned_json"
+        ],
+        "persistence.retention": [
+            "Rick\\Laravel\\Tests\\Feature\\RetentionTest::test_pruner_honours_tenant_cutoff_status_batch_cascade_outbox_and_dry_run"
+        ],
+        "persistence.portability": [
+            "Rick\\Laravel\\Tests\\Feature\\MigrationPortabilityTest::test_all_business_identifiers_are_portable_varchar_128_columns",
+            "Rick\\Laravel\\Tests\\Feature\\MigrationPortabilityTest::test_explicit_constraint_and_index_names_are_short_and_tenant_first"
+        ],
+        "persistence.sqlite_worker_profile": [
+            "Rick\\Laravel\\Tests\\Feature\\SqliteQueueProfileTest::test_diagnostics_report_actionable_concurrent_worker_warnings",
+            "Rick\\Laravel\\Tests\\Feature\\SqliteQueueProfileTest::test_documented_file_backed_profile_passes_diagnostics"
+        ],
+        "observability.run_index": [
+            "Rick\\Laravel\\Tests\\Feature\\ObservabilityReadModelTest::test_run_index_is_bounded_cursor_paginated_status_filtered_and_tenant_scoped"
+        ],
+        "observability.timeline_delivery": [
+            "Rick\\Laravel\\Tests\\Feature\\ObservabilityReadModelTest::test_timeline_and_delivery_are_stable_incremental_and_redacted"
+        ],
+        "observability.attempt_diagnostics": [
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_candidate_quorum_opens_review_with_original_provenance"
+        ],
+        "transport.versioned_read_dtos": [
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\PublicReadDtoTest::test_public_read_transport_matches_the_version_one_golden_fixture"
+        ],
+        "testing.fake_gateway": [
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\FakeGatewayTest::test_callable_and_measured_responses_are_deterministic",
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_five_generated_plans_pause_for_manual_selection_and_return_the_selected_plan"
+        ],
+        "queue.database": [
+            "Rick\\Laravel\\Tests\\Feature\\QueueExecutionBackendTest::test_outbox_relay_preserves_the_configured_queue_connection"
+        ],
+        "queue.redis": [
+            "Rick\\Laravel\\Tests\\Feature\\QueueExecutionBackendTest::test_outbox_relay_preserves_the_configured_queue_connection"
+        ],
+        "queue.sqs": [
+            "Rick\\Laravel\\Tests\\Feature\\QueueExecutionBackendTest::test_outbox_relay_preserves_the_configured_queue_connection"
+        ],
+        "runtime.transactional_outbox": [
+            "Rick\\Laravel\\Tests\\Feature\\TransactionOutboxReliabilityTest::test_outer_rollback_atomically_discards_run_outbox_and_queue_handoff",
+            "Rick\\Laravel\\Tests\\Feature\\TransactionOutboxReliabilityTest::test_broker_failure_is_safely_deferred_and_later_retried",
+            "Rick\\Laravel\\Tests\\Feature\\TransactionOutboxReliabilityTest::test_crash_after_dispatch_is_recovered_as_an_at_least_once_duplicate",
+            "Rick\\Laravel\\Tests\\Feature\\TransactionOutboxReliabilityTest::test_listener_failure_retries_and_poison_payload_enters_quarantine"
+        ],
+        "runtime.scoped_lifecycle": [
+            "Rick\\Laravel\\Tests\\Feature\\ScopedLifecycleTest::test_tenant_sensitive_graph_is_recreated_between_laravel_scopes",
+            "Rick\\Laravel\\Tests\\Feature\\ScopedLifecycleTest::test_facade_resolves_the_current_scoped_rick_instance"
+        ],
+        "runtime.retry_attempt_ledger": [
+            "Rick\\Laravel\\Tests\\Feature\\PersistenceBoundaryTest::test_safe_gateway_failure_retries_inside_the_application_use_case"
+        ],
+        "runtime.structured_response_retry": [
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_explicit_structured_retry_persists_both_paid_attempts",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_structured_retry_uses_only_a_distinct_fallback_route",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_structured_retry_stops_at_the_explicit_attempt_limit",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_structured_fallback_rejects_a_duplicate_provider_route",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_retry_is_not_sent_when_call_budget_is_exhausted",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_paid_failed_attempt_is_counted_before_retry_cost_budget_check"
+        ],
+        "runtime.candidate_quorum": [
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_candidate_quorum_opens_review_with_original_provenance",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_all_required_and_unreachable_quorum_remain_terminal_failures"
+        ],
+        "runtime.indeterminate_recovery": [
+            "Rick\\Laravel\\Tests\\Feature\\PersistenceBoundaryTest::test_ambiguous_paid_attempt_is_persisted_for_manual_recovery_and_never_requeued"
+        ],
+        "runtime.safe_provider_outcomes": [
+            "Rick\\Laravel\\Tests\\Feature\\ProviderOutcomeTest::test_invalid_paid_response_is_not_retried_but_preserves_usage_without_payload_leakage",
+            "Rick\\Laravel\\Tests\\Feature\\StructuredResponseRecoveryTest::test_missing_usage_on_a_paid_invalid_response_remains_incomplete"
+        ],
+        "runtime.safe_http_4xx_outcomes": [
+            "Rick\\Laravel\\Tests\\Feature\\ProviderOutcomeTest::test_http_client_rejection_fails_safely_without_indeterminate_recovery_or_body_leakage",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\LaravelAiFailureClassifierTest::test_client_errors_are_safe_provider_rejections_without_response_body_leakage"
+        ],
+        "runtime.cost_reservation": [
+            "Rick\\Laravel\\Tests\\Feature\\PublicExecutionFlowTest::test_resource_budget_fails_before_an_oversized_invocation_is_dispatched",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\PricingTest::test_configured_pricing_uses_integer_nanodollars_for_actual_and_reserved_costs"
+        ],
+        "runtime.stale_lease_recovery": [
+            "Rick\\Laravel\\Tests\\Feature\\PersistenceBoundaryTest::test_recovery_command_quarantines_expired_leases_and_publishes_an_event"
+        ],
+        "runtime.recovery_batching": [
+            "Rick\\Laravel\\Tests\\Feature\\RecoveryBatchTest::test_recovery_processes_a_bounded_batch_and_rechecks_current_state"
+        ],
+        "runtime.legacy_migration": [
+            "Rick\\Laravel\\Tests\\Feature\\LegacyDataMigrationTest::test_it_copies_encrypted_legacy_rows_and_quarantines_in_flight_calls_idempotently"
+        ],
+        "validation.identifiers": [
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\IdentifierTest::test_every_identifier_trims_and_accepts_exactly_128_unicode_characters",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\IdentifierTest::test_every_identifier_rejects_129_unicode_characters",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\IdentifierTest::test_every_identifier_rejects_invalid_utf8",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\ExecutionDomainTest::test_provider_identifiers_keep_gateway_and_provider_semantics_separate"
+        ],
+        "validation.json_schema": [
+            "Rick\\Laravel\\Tests\\Unit\\Infrastructure\\Schema\\JsonSchemaValidatorTest::test_draft_2020_12_keywords_compositions_and_local_refs_are_supported",
+            "Rick\\Laravel\\Tests\\Unit\\Infrastructure\\Schema\\JsonSchemaValidatorTest::test_remote_refs_are_rejected_without_a_network_attempt"
+        ],
+        "validation.structured_response_diagnostics": [
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\CompletionResponseSchemaTest::test_defensive_decoder_preserves_every_safe_failure_category",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\CompletionResponseSchemaTest::test_schema_validation_diagnostic_preserves_path_and_keyword_without_raw_content",
+            "Rick\\Laravel\\Tests\\Feature\\LaravelAiGatewayTest::test_zero_sdk_usage_is_preserved_as_missing_instead_of_complete"
+        ],
+        "validation.structured_output_portability": [
+            "Rick\\Laravel\\Tests\\Feature\\LaravelAiGatewayTest::test_openrouter_candidate_uses_the_exact_strict_response_format_fixture",
+            "Rick\\Laravel\\Tests\\Feature\\LaravelAiGatewayTest::test_gemini_candidate_uses_the_compatible_schema_fixture",
+            "Rick\\Laravel\\Tests\\Feature\\LaravelAiGatewayTest::test_invalid_strict_schema_fails_before_provider_dispatch",
+            "Rick\\Laravel\\Tests\\Unit\\Domain\\CompletionResponseSchemaTest::test_custom_structured_schema_requires_a_strict_object_at_every_level"
+        ],
+        "validation.configuration": [
+            "Rick\\Laravel\\Tests\\Unit\\Infrastructure\\Configuration\\RickConfigurationTest::test_unknown_package_key_fails_fast",
+            "Rick\\Laravel\\Tests\\Unit\\Infrastructure\\Configuration\\RickConfigurationTest::test_broken_pricing_and_operation_cross_references_fail_fast",
+            "Rick\\Laravel\\Tests\\Unit\\Infrastructure\\Configuration\\RickConfigurationTest::test_invalid_structured_response_retry_configuration_fails_fast"
+        ],
+        "validation.published_configuration": [
+            "Rick\\Laravel\\Tests\\Feature\\PublishedConfigTest::test_published_config_matches_the_version_two_snapshot"
+        ],
+        "extensions.versioned_custom_steps": [
+            "Rick\\Laravel\\Tests\\Feature\\PersistenceBoundaryTest::test_custom_step_round_trip_requires_an_explicit_versioned_codec"
+        ],
+        "recipes.built_in": [
+            "Rick\\Laravel\\Tests\\Feature\\PackageBootTest::test_operational_commands_are_registered"
+        ],
+        "tooling.console": [
+            "Rick\\Laravel\\Tests\\Feature\\PackageBootTest::test_operational_commands_are_registered",
+            "Rick\\Laravel\\Tests\\Feature\\TenantOperationsTest::test_operational_commands_default_to_current_tenant_and_accept_repeatable_tenants"
+        ],
+        "documentation.quick_start": [
+            "Rick\\Laravel\\Tests\\Feature\\ReadmeQuickStartTest::test_readme_quick_start_executes_without_llm_or_manual_barrier"
+        ]
+    }
+}

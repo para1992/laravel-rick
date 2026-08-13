@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache/regression">
+    <testsuites>
+        <testsuite name="Regression">
+            <file>tests/RegressionManifestTest.php</file>
+            <file>tests/Feature/RickTest.php</file>
+            <file>tests/Feature/OrchestrationExecutionTest.php</file>
+            <file>tests/Feature/PackageBootTest.php</file>
+            <file>tests/Feature/LaravelAiGatewayTest.php</file>
+            <file>tests/Feature/PublishedConfigTest.php</file>
+            <file>tests/Feature/PublicExecutionFlowTest.php</file>
+            <file>tests/Feature/ObservabilityReadModelTest.php</file>
+            <file>tests/Feature/QueueExecutionBackendTest.php</file>
+            <file>tests/Feature/PricingConfigurationTest.php</file>
+            <file>tests/Feature/PersistenceBoundaryTest.php</file>
+            <file>tests/Feature/LegacyDataMigrationTest.php</file>
+            <file>tests/Feature/MigrationPortabilityTest.php</file>
+            <file>tests/Feature/ProviderOutcomeTest.php</file>
+            <file>tests/Feature/StructuredResponseRecoveryTest.php</file>
+            <file>tests/Feature/ReadmeQuickStartTest.php</file>
+            <file>tests/Feature/RecoveryBatchTest.php</file>
+            <file>tests/Feature/RetentionTest.php</file>
+            <file>tests/Feature/SqliteQueueProfileTest.php</file>
+            <file>tests/Feature/ScopedLifecycleTest.php</file>
+            <file>tests/Feature/TenantOperationsTest.php</file>
+            <file>tests/Feature/TransactionOutboxReliabilityTest.php</file>
+            <file>tests/Unit/Domain/CompletionResponseSchemaTest.php</file>
+            <file>tests/Unit/Domain/ExecutionDomainTest.php</file>
+            <file>tests/Unit/Domain/FakeGatewayTest.php</file>
+            <file>tests/Unit/Domain/IdentifierTest.php</file>
+            <file>tests/Unit/Domain/LaravelAiFailureClassifierTest.php</file>
+            <file>tests/Unit/Domain/PricingTest.php</file>
+            <file>tests/Unit/Domain/PromptBoundsTest.php</file>
+            <file>tests/Unit/Domain/PublicReadDtoTest.php</file>
+            <file>tests/Unit/Infrastructure/Configuration/RickConfigurationTest.php</file>
+            <file>tests/Unit/Infrastructure/Schema/JsonSchemaValidatorTest.php</file>
+        </testsuite>
+    </testsuites>
+    <php>
+        <ini name="memory_limit" value="1G"/>
+        <env name="APP_ENV" value="testing"/>
+    </php>
+</phpunit>

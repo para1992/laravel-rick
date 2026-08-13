@@ -1,0 +1,24 @@
+log:
+  level: info
+
+runner:
+  file: /data/.runner
+  capacity: 4
+  timeout: 1h
+  shutdown_timeout: 10s
+
+cache:
+  enabled: true
+  dir: /data/cache
+
+container:
+  network: host
+  privileged: false
+  options:
+  workdir_parent:
+  valid_volumes: []
+  docker_host: unix:///var/run/user/1000/docker.sock
+  force_pull: false
+
+host:
+  workdir_parent:

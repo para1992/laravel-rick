@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STATE_DIR="$ROOT/.local-ci"
+COMPOSE_FILE="$ROOT/docker-compose.local-ci.yml"
+COLIMA_COMPOSE_FILE="$ROOT/docker-compose.local-ci.colima.yml"
+ADMIN_ENV="$STATE_DIR/admin.env"
+RUNNER_TOKEN="$STATE_DIR/runner-token"
+GITEA_URL="http://localhost:3000"
+GITEA_OWNER="local-ci"
+GITEA_REPOSITORY="laravel-rick"
+
+compose() {
+    local -a arguments=(
+        --project-directory "$ROOT"
+        --file "$COMPOSE_FILE"
+    )
+
+    if [[ "$(docker context show 2>/dev/null)" == "colima" ]]; then
+        arguments+=(--file "$COLIMA_COMPOSE_FILE")
+    fi
+
+    if docker compose version >/dev/null 2>&1; then
+        docker compose "${arguments[@]}" "$@"
+        return
+    fi
+
+    if command -v docker-compose >/dev/null 2>&1; then
+        docker-compose "${arguments[@]}" "$@"
+        return
+    fi
+
+    echo "Docker Compose was not found." >&2
+    exit 1
+}
+
+require_docker() {
+    if ! command -v docker >/dev/null 2>&1; then
+        echo "Docker CLI was not found. Install and start Docker Desktop or OrbStack." >&2
+        exit 1
+    fi
+
+    if ! docker info >/dev/null 2>&1; then
+        echo "Docker daemon is not available. Start Docker Desktop or OrbStack." >&2
+        exit 1
+    fi
+}
+
+configure_colima_rootless_userns() {
+    local restriction
+
+    if [[ "$(docker context show 2>/dev/null)" != "colima" ]] ||
+        ! command -v colima >/dev/null 2>&1; then
+        return
+    fi
+
+    restriction="$(colima ssh -- cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null || true)"
+    if [[ "$restriction" != "1" ]]; then
+        return
+    fi
+
+    colima ssh -- sudo install -m 0644 \
+        "$ROOT/local-ci/rootlesskit.apparmor" \
+        /etc/apparmor.d/usr.local.bin.rootlesskit
+    colima ssh -- sudo apparmor_parser -r /etc/apparmor.d/usr.local.bin.rootlesskit
+}
+
+generate_secrets() {
+    mkdir -p "$STATE_DIR"
+    chmod 700 "$STATE_DIR"
+
+    if [[ ! -f "$ADMIN_ENV" ]]; then
+        {
+            printf 'GITEA_ADMIN_USER=%q\n' "$GITEA_OWNER"
+            printf 'GITEA_ADMIN_PASSWORD=%q\n' "$(openssl rand -base64 36 | tr -d '\n')"
+        } > "$ADMIN_ENV"
+        chmod 600 "$ADMIN_ENV"
+    fi
+
+    if [[ ! -f "$RUNNER_TOKEN" ]]; then
+        openssl rand -hex 32 > "$RUNNER_TOKEN"
+        chmod 600 "$RUNNER_TOKEN"
+    fi
+}
+
+load_admin() {
+    if [[ ! -f "$ADMIN_ENV" ]]; then
+        echo "Local CI credentials are missing. Run 'make ci-up' first." >&2
+        exit 1
+    fi
+
+    # shellcheck disable=SC1090
+    source "$ADMIN_ENV"
+}
+
+wait_for_gitea() {
+    local attempt
+
+    for attempt in {1..60}; do
+        if curl --fail --silent "$GITEA_URL/api/healthz" >/dev/null; then
+            return
+        fi
+        sleep 2
+    done
+
+    echo "Gitea did not become healthy in time." >&2
+    compose logs gitea >&2
+    exit 1
+}
+
+ensure_admin() {
+    if compose exec --no-TTY gitea gitea admin user list |
+        awk '{print $2}' |
+        grep --fixed-strings --line-regexp --quiet "$GITEA_ADMIN_USER"; then
+        return
+    fi
+
+    compose exec --no-TTY gitea gitea admin user create \
+        --admin \
+        --email "local-ci@localhost.invalid" \
+        --must-change-password=false \
+        --password "$GITEA_ADMIN_PASSWORD" \
+        --username "$GITEA_ADMIN_USER"
+}
+
+ensure_repository() {
+    local status
+
+    status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+        --user "$GITEA_ADMIN_USER:$GITEA_ADMIN_PASSWORD" \
+        "$GITEA_URL/api/v1/repos/$GITEA_OWNER/$GITEA_REPOSITORY")"
+
+    if [[ "$status" == "200" ]]; then
+        return
+    fi
+
+    curl --fail --silent --show-error \
+        --user "$GITEA_ADMIN_USER:$GITEA_ADMIN_PASSWORD" \
+        --header 'Content-Type: application/json' \
+        --data '{"name":"laravel-rick","description":"Local CI mirror","private":false,"auto_init":false}' \
+        "$GITEA_URL/api/v1/user/repos" >/dev/null
+}
+
+ensure_git_repository() {
+    if [[ ! -d "$ROOT/.git" ]]; then
+        git -C "$ROOT" init --initial-branch=main
+    fi
+
+    if ! git -C "$ROOT" config user.name >/dev/null; then
+        git -C "$ROOT" config user.name "Laravel Rick Local CI"
+    fi
+    if ! git -C "$ROOT" config user.email >/dev/null; then
+        git -C "$ROOT" config user.email "local-ci@localhost.invalid"
+    fi
+
+    if git -C "$ROOT" remote get-url local-ci >/dev/null 2>&1; then
+        git -C "$ROOT" remote set-url local-ci "$GITEA_URL/$GITEA_OWNER/$GITEA_REPOSITORY.git"
+    else
+        git -C "$ROOT" remote add local-ci "$GITEA_URL/$GITEA_OWNER/$GITEA_REPOSITORY.git"
+    fi
+}
+
+push_repository() {
+    local auth
+
+    load_admin
+    ensure_git_repository
+
+    if ! git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
+        echo "The package has no commit. Create an initial commit before running 'make ci-push'." >&2
+        exit 1
+    fi
+    if [[ -n "$(git -C "$ROOT" status --short)" ]]; then
+        echo "The package working tree is dirty. Commit the intended CI snapshot first." >&2
+        exit 1
+    fi
+
+    auth="$(printf '%s' "$GITEA_ADMIN_USER:$GITEA_ADMIN_PASSWORD" | base64 | tr -d '\n')"
+    git -C "$ROOT" \
+        -c credential.helper= \
+        -c "http.extraHeader=Authorization: Basic $auth" \
+        push --force-with-lease local-ci HEAD:main
+
+    echo "Pipeline: $GITEA_URL/$GITEA_OWNER/$GITEA_REPOSITORY/actions"
+}
+
+case "${1:-}" in
+    up)
+        require_docker
+        configure_colima_rootless_userns
+        generate_secrets
+        load_admin
+        compose up --detach gitea
+        wait_for_gitea
+        ensure_admin
+        ensure_repository
+        ensure_git_repository
+        compose up --detach runner
+        echo "Gitea: $GITEA_URL"
+        echo "Credentials: $ADMIN_ENV"
+        echo "Remote: local-ci -> $GITEA_URL/$GITEA_OWNER/$GITEA_REPOSITORY.git"
+        ;;
+    push)
+        require_docker
+        push_repository
+        ;;
+    open)
+        open "$GITEA_URL/$GITEA_OWNER/$GITEA_REPOSITORY/actions"
+        ;;
+    down)
+        require_docker
+        compose down
+        echo "Local CI stopped. Named volumes were preserved."
+        ;;
+    *)
+        echo "Usage: $0 {up|push|open|down}" >&2
+        exit 2
+        ;;
+esac

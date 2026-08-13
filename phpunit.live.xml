@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests-live/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache/live">
+    <testsuites>
+        <testsuite name="Paid live smoke">
+            <directory suffix="Test.php">tests-live</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <ini name="memory_limit" value="1G"/>
+        <env name="APP_ENV" value="testing"/>
+    </php>
+</phpunit>
