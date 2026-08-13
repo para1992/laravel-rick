@@ -17,7 +17,7 @@ jobs:
     name: Quality, coverage, and archive
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.5"
@@ -55,7 +55,7 @@ jobs:
         laravel: ["12", "13"]
         ai: ["0.9.1", "0.10.0"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -129,7 +129,7 @@ jobs:
           --health-cmd="pg_isready -U rick -d rick"
           --health-interval=10s --health-timeout=5s --health-retries=10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.5"
@@ -170,7 +170,7 @@ jobs:
           --health-cmd="curl -fs http://localhost:4566/_localstack/health"
           --health-interval=5s --health-timeout=3s --health-retries=20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.5"
@@ -208,7 +208,7 @@ jobs:
       matrix:
         laravel: ["12", "13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.5"
@@ -234,7 +234,7 @@ jobs:
     needs: [compatibility, databases, queues, archive-consumer]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.5"
