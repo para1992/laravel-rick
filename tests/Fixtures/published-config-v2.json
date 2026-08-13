@@ -1,0 +1,52 @@
+{
+    "schema_version": 2,
+    "top_level_keys": [
+        "tables",
+        "tenant",
+        "queue",
+        "execution",
+        "outbox",
+        "retention",
+        "persistence",
+        "legacy_migration",
+        "quality",
+        "llm"
+    ],
+    "tables": {
+        "runs": "rick_runs",
+        "step_executions": "rick_step_executions",
+        "llm_invocations": "rick_llm_invocations",
+        "invocation_attempts": "rick_invocation_attempts",
+        "outbox": "rick_outbox",
+        "observations": "rick_run_observations"
+    },
+    "queue": {
+        "connection": null,
+        "control": "default",
+        "llm": "default",
+        "continue": {
+            "tries": 5,
+            "timeout": 60,
+            "backoff": [
+                1,
+                5,
+                15,
+                30
+            ]
+        },
+        "invocation": {
+            "tries": 5,
+            "timeout": 180,
+            "backoff": [
+                5,
+                30,
+                120,
+                300
+            ]
+        }
+    },
+    "structured_responses": {
+        "attempts": 1,
+        "strategy": "same_route_then_fallback"
+    }
+}

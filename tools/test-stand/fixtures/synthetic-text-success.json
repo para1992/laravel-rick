@@ -1,0 +1,37 @@
+{
+    "schema_version": 1,
+    "id": "synthetic-text-success",
+    "kind": "synthetic",
+    "provenance": {
+        "source": "hand-authored deterministic edge case",
+        "recorded_at": "2026-08-01T00:00:00+00:00",
+        "provider": "fake",
+        "model": "fixture-v1",
+        "sanitized_by": "not-applicable",
+        "source_sha256": "synthetic"
+    },
+    "matcher": {
+        "response_contract": "text"
+    },
+    "outcome": {
+        "type": "response",
+        "response": {
+            "text": "OFFLINE_OK",
+            "structured": null,
+            "provider": "fake",
+            "model": "fixture-v1"
+        }
+    },
+    "metrics": {
+        "input_tokens": 8,
+        "output_tokens": 3,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "reasoning_tokens": 0,
+        "latency_milliseconds": 10,
+        "cost_usd": "0",
+        "provider_requests": 1,
+        "usage_complete": true,
+        "usage_present": true
+    }
+}

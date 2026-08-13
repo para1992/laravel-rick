@@ -1,0 +1,57 @@
+{
+    "name": "rickphp/laravel-rick-test-stand",
+    "description": "Deterministic offline consumer test stand for rickphp/laravel-rick",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "ext-json": "*",
+        "rickphp/laravel-rick": "dev-main"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-mutate": "^4.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../..",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "rickphp/laravel-rick": "dev-main"
+                }
+            }
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Rick\\Stand\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rick\\Stand\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/rick-stand"
+    ],
+    "scripts": {
+        "stand": "@php bin/rick-stand run",
+        "stand:full": "@php bin/rick-stand run --lane=full",
+        "stand:archive": "@php bin/rick-stand run --target=archive",
+        "stand:mutation": "@php bin/rick-stand mutate",
+        "test": "@php vendor/bin/pest --configuration=phpunit.xml"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "pestphp/pest-plugin-mutate": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

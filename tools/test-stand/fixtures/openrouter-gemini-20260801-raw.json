@@ -1,0 +1,39 @@
+{
+    "schema_version": 1,
+    "id": "openrouter-gemini-20260801-raw",
+    "kind": "live_sanitized",
+    "provenance": {
+        "source": "manual import from build/live-smoke/20260801-004253.json",
+        "recorded_at": "2026-08-01T00:42:53+00:00",
+        "provider": "openrouter",
+        "model": "google/gemini-2.5-flash-lite",
+        "sanitized_by": "rick-stand-manual-import-v1",
+        "source_sha256": "87574741065da4789be691e1b9e7366bd419ca79d5296f4705f4740887513f0b"
+    },
+    "matcher": {
+        "purpose": "raw_prompt",
+        "response_contract": "text",
+        "prompt_contains": "RICK_LIVE_OK"
+    },
+    "outcome": {
+        "type": "response",
+        "response": {
+            "text": "RICK_LIVE_OK",
+            "structured": null,
+            "provider": "openrouter",
+            "model": "google/gemini-2.5-flash-lite"
+        }
+    },
+    "metrics": {
+        "input_tokens": 15,
+        "output_tokens": 5,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "reasoning_tokens": 0,
+        "latency_milliseconds": 646,
+        "cost_usd": "0.0000035",
+        "provider_requests": 1,
+        "usage_complete": true,
+        "usage_present": true
+    }
+}

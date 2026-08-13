@@ -1,0 +1,40 @@
+{
+    "schema_version": 1,
+    "id": "synthetic-provider-indeterminate",
+    "kind": "synthetic",
+    "provenance": {
+        "source": "hand-authored unreachable provider edge case",
+        "recorded_at": "2026-08-01T00:00:00+00:00",
+        "provider": "fake",
+        "model": "fixture-v1",
+        "sanitized_by": "not-applicable",
+        "source_sha256": "synthetic"
+    },
+    "matcher": {
+        "purpose": "raw_prompt",
+        "response_contract": "text"
+    },
+    "outcome": {
+        "type": "provider_error",
+        "error": {
+            "safe_code": "provider_result_indeterminate",
+            "safe_message": "The synthetic provider outcome is indeterminate.",
+            "retryable": false,
+            "request_outcome": "indeterminate",
+            "request_id": "fixture-request",
+            "http_status_class": null
+        }
+    },
+    "metrics": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "reasoning_tokens": 0,
+        "latency_milliseconds": 0,
+        "cost_usd": "0",
+        "provider_requests": 1,
+        "usage_complete": false,
+        "usage_present": false
+    }
+}

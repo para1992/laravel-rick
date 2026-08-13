@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible Laravel Rick defect
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not report security vulnerabilities here; follow SECURITY.md.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Laravel Rick, PHP, Laravel, database, and queue driver versions.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include deterministic steps and sanitized configuration.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Sensitive data
+      options:
+        - label: I removed credentials, tenant data, prompts, and raw payloads.
+          required: true

@@ -1,0 +1,15 @@
+{
+    "response_mime_type": "application/json",
+    "response_json_schema": {
+        "additionalProperties": false,
+        "properties": {
+            "content": {
+                "type": "string"
+            }
+        },
+        "type": "object",
+        "required": [
+            "content"
+        ]
+    }
+}

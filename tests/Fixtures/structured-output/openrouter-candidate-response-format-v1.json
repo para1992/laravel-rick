@@ -1,0 +1,19 @@
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "schema_definition",
+        "schema": {
+            "additionalProperties": false,
+            "properties": {
+                "content": {
+                    "type": "string"
+                }
+            },
+            "type": "object",
+            "required": [
+                "content"
+            ]
+        },
+        "strict": true
+    }
+}

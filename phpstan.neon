@@ -1,0 +1,21 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - config
+        - database
+        - tests
+        - tests-live
+        - tools/check-coverage.php
+        - tools/prepare-archive.php
+        - tools/test-matrix.php
+        - tools/verify-archive.php
+    bootstrapFiles:
+        - tests/bootstrap.php
+    tmpDir: .phpstan.cache
+    disableSchemaScan: true

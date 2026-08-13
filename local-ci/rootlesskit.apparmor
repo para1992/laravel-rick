@@ -1,0 +1,8 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+/usr/local/bin/rootlesskit flags=(unconfined) {
+  userns,
+
+  include if exists <local/usr.local.bin.rootlesskit>
+}

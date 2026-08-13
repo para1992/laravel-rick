@@ -1,0 +1,59 @@
+name: laravel-rick-ci
+
+services:
+  gitea:
+    image: docker.gitea.com/gitea:1.27.0-rootless
+    restart: unless-stopped
+    environment:
+      GITEA__actions__ENABLED: "true"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__server__DOMAIN: localhost
+      GITEA__server__HTTP_PORT: "3000"
+      GITEA__server__LOCAL_ROOT_URL: http://gitea:3000/
+      GITEA__server__ROOT_URL: http://localhost:3000/
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA_RUNNER_REGISTRATION_TOKEN_FILE: /run/secrets/runner-token
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - gitea-data:/var/lib/gitea
+      - gitea-config:/etc/gitea
+    secrets:
+      - runner-token
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:3000/api/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  runner:
+    image: docker.io/gitea/runner:2.3.0-dind-rootless
+    restart: unless-stopped
+    privileged: true
+    depends_on:
+      gitea:
+        condition: service_healthy
+    environment:
+      CONFIG_FILE: /config.yaml
+      DOCKER_HOST: unix:///var/run/user/1000/docker.sock
+      GITEA_INSTANCE_URL: http://gitea:3000/
+      GITEA_RUNNER_LABELS: ubuntu-latest:docker://composer:2.10.2
+      GITEA_RUNNER_NAME: laravel-rick-rootless
+      GITEA_RUNNER_REGISTRATION_TOKEN_FILE: /run/secrets/runner-token
+    volumes:
+      - runner-data:/data
+      - ./local-ci/runner-config.yaml:/config.yaml:ro
+    secrets:
+      - runner-token
+
+volumes:
+  gitea-config:
+  gitea-data:
+  runner-data:
+
+secrets:
+  runner-token:
+    file: ./.local-ci/runner-token
