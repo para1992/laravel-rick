@@ -15,6 +15,24 @@ use Rick\Laravel\Tests\TestCase;
 
 final class ReadmeQuickStartTest extends TestCase
 {
+    public function test_readme_documents_the_provider_setup(): void
+    {
+        $readme = file_get_contents(dirname(__DIR__, 2).'/README.md');
+        self::assertIsString($readme);
+
+        foreach ([
+            'OPENROUTER_API_KEY=your-key-here',
+            'RICK_LLM_PROVIDER=openrouter',
+            'RICK_LLM_MODEL=google/gemini-3.5-flash-lite',
+            'php artisan vendor:publish --tag=rick-config',
+            "'provider' => env('RICK_LLM_PROVIDER', 'openrouter')",
+            "'model' => env('RICK_LLM_MODEL')",
+            'php artisan config:clear',
+        ] as $instruction) {
+            self::assertStringContainsString($instruction, $readme);
+        }
+    }
+
     public function test_readme_quick_start_executes_one_raw_prompt(): void
     {
         $readme = file_get_contents(dirname(__DIR__, 2).'/README.md');

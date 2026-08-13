@@ -17,6 +17,93 @@ configuration only when the application needs to override it:
 php artisan vendor:publish --tag=rick-config
 ```
 
+## Configure an AI provider
+
+Laravel Rick dispatches model calls through Laravel AI. The package does not
+guess a paid provider or model: applications must configure an explicit route
+before running an LLM step.
+
+The quickest OpenRouter setup is:
+
+```dotenv
+OPENROUTER_API_KEY=your-key-here
+RICK_LLM_PROVIDER=openrouter
+RICK_LLM_MODEL=google/gemini-3.5-flash-lite
+```
+
+Create the key in the [OpenRouter dashboard](https://openrouter.ai/settings/keys),
+publish `config/rick.php`, and replace its `llm.models` section with:
+
+```php
+'models' => [
+    'cheap' => [
+        'provider' => env('RICK_LLM_PROVIDER', 'openrouter'),
+        'model' => env('RICK_LLM_MODEL'),
+    ],
+    'medium' => [
+        'provider' => env('RICK_LLM_PROVIDER', 'openrouter'),
+        'model' => env('RICK_LLM_MODEL'),
+    ],
+    'quality' => [
+        'provider' => env('RICK_LLM_PROVIDER', 'openrouter'),
+        'model' => env('RICK_LLM_MODEL'),
+    ],
+],
+```
+
+Using the same route for all three tiers is a straightforward starting point.
+Applications can later assign cheaper and stronger models independently. The
+default policy resolves to `medium`; `cheap` and `quality` are used by explicit
+policies and escalation paths.
+
+Clear cached configuration after editing `.env` or `config/rick.php`:
+
+```bash
+php artisan config:clear
+```
+
+Now make one real provider call from a route, command, or Tinker:
+
+```php
+use Rick\Laravel\Rick;
+
+$rick = app(Rick::class);
+$workflow = $rick->workflow('first-call')
+    ->rawPrompt('Reply with exactly: Laravel Rick is running.')
+    ->build();
+
+$run = $rick->run($workflow);
+
+dump($run->status->value, $run->output(), $rick->metrics($run->id));
+```
+
+`rawPrompt()` makes one provider request. Candidate generation makes one
+request per candidate, so `plan(candidates: 5)` makes five billable requests.
+Structured steps require a model route that supports structured JSON output.
+The public [demo application](https://github.com/para1992/laravel-rick-demo)
+uses a deterministic gateway by default and documents the same optional live
+OpenRouter configuration.
+
+For another provider, change `RICK_LLM_PROVIDER`, `RICK_LLM_MODEL`, and add the
+credential expected by the
+[Laravel AI SDK](https://laravel.com/docs/13.x/ai-sdk). Laravel AI owns provider
+transport configuration; Laravel Rick owns workflow routing, persistence,
+budgets, metrics, and recovery.
+
+### Common setup failures
+
+- An authentication failure usually means the provider credential is missing
+  from the process environment or stale configuration is cached.
+- A model-not-found failure means `RICK_LLM_MODEL` is not a valid model slug for
+  the selected provider.
+- A structured-response failure can mean the selected model does not support
+  the strict JSON Schema required by candidate and JSON steps.
+- A run that remains queued needs a Laravel queue worker, scheduler, and outbox
+  relay. Use `run()` for the first synchronous smoke test; configure workers
+  before using `schedule()`.
+- Never commit `.env` or provider keys. Laravel's standard `.gitignore` should
+  exclude `.env`; verify the staged diff before every push.
+
 Queue names are string values, not nested objects:
 
 ```php
