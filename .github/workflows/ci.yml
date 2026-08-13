@@ -23,7 +23,7 @@ jobs:
           php-version: "8.5"
           coverage: pcov
           tools: composer:v2
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
