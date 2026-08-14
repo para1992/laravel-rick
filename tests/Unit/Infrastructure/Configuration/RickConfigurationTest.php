@@ -144,6 +144,38 @@ final class RickConfigurationTest extends TestCase
         $this->configuration($input);
     }
 
+    public function test_custom_output_schemas_fail_fast_with_operation_and_property_context(): void
+    {
+        $input = $this->defaults();
+        $llm = ConfigurationInput::map($input['llm'] ?? null, 'llm');
+        $operations = ConfigurationInput::map($llm['operations'] ?? null, 'llm.operations');
+        $operation = ConfigurationInput::map(
+            $operations['rick.verify.grounded'] ?? null,
+            'llm.operations.rick.verify.grounded',
+        );
+        $operation['output_schema'] = [
+            'type' => 'object',
+            'properties' => [
+                'passed' => ['type' => 'boolean'],
+                'winner_confidence' => ['type' => 'number'],
+            ],
+            'required' => ['passed'],
+            'additionalProperties' => false,
+        ];
+        $operations['rick.verify.grounded'] = $operation;
+        $llm['operations'] = $operations;
+        $input['llm'] = $llm;
+
+        try {
+            $this->configuration($input);
+            self::fail('A non-strict custom output schema should fail during configuration.');
+        } catch (InvalidArgumentException $error) {
+            self::assertStringContainsString('rick.verify.grounded', $error->getMessage());
+            self::assertStringContainsString('$.winner_confidence', $error->getMessage());
+            self::assertStringContainsString('nullable type', $error->getMessage());
+        }
+    }
+
     public function test_broken_pricing_and_operation_cross_references_fail_fast(): void
     {
         $input = $this->defaults();

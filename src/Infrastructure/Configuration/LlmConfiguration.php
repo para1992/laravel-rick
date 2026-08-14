@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Rick\Laravel\Application\Execution\Support\Llm\Prompt\StepPromptRegistry;
 use Rick\Laravel\Application\Interface\JsonSchemaValidatorBase;
 use Rick\Laravel\Domain\Llm\ValueObject\ResponseContract;
+use Rick\Laravel\Domain\Llm\ValueObject\StrictSchema;
 
 final readonly class LlmConfiguration
 {
@@ -215,6 +216,16 @@ final readonly class LlmConfiguration
             if ($schema !== null) {
                 $schema = ConfigurationInput::map($schema, "{$path}.output_schema");
                 $schemas->assertSchema($schema);
+                if ($contract !== ResponseContract::Text->value) {
+                    try {
+                        StrictSchema::assertStrict($schema);
+                    } catch (InvalidArgumentException $error) {
+                        throw new InvalidArgumentException(
+                            "LLM operation [{$id}] has an invalid strict output schema: {$error->getMessage()}",
+                            previous: $error,
+                        );
+                    }
+                }
             }
             if ($contract === ResponseContract::Json->value && $schema === null) {
                 throw new InvalidArgumentException("JSON LLM operation [{$id}] requires an output schema.");

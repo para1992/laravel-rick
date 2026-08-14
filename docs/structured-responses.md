@@ -6,6 +6,34 @@ local post-response validator, and the SHA-256 schema fingerprint used for
 diagnostics. Package-owned candidate output is exactly an object with one
 required string field, `content`, and no additional properties.
 
+## Consumer-defined strict schemas
+
+Custom `llm.operations.*.output_schema` values use the same portable strict
+envelope. Every declared object property must be present in `required`, and
+every object must set `additionalProperties` to `false`. Rick validates this
+while loading configuration and again before dispatching a provider request.
+
+Use `StrictSchema` to avoid maintaining `required` by hand:
+
+```php
+use Rick\Laravel\Domain\Llm\ValueObject\StrictSchema;
+
+$schema = StrictSchema::object([
+    'winner' => ['type' => 'integer'],
+    'winner_confidence' => ['type' => 'number'],
+    'reason' => StrictSchema::nullable(['type' => 'string']),
+    'evidence' => StrictSchema::object([
+        'quote' => ['type' => 'string'],
+    ]),
+]);
+```
+
+`object()` adds every supplied property to `required` and forbids additional
+properties. `nullable()` means that a field is always present but may contain
+`null`; it does not make a field omittable. Strict structured output has no
+portable `notRequired()` equivalent. Raw JSON Schema arrays remain supported
+when they already follow these rules.
+
 Rick decodes the provider's raw response text itself with throwing JSON
 semantics. Empty text, invalid JSON, scalar JSON, arrays, objects, and fenced
 JSON remain distinguishable. A failure stores an encrypted safe diagnostic

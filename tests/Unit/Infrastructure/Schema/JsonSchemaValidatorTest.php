@@ -53,6 +53,22 @@ final class JsonSchemaValidatorTest extends TestCase
         self::addToAssertionCount(1);
     }
 
+    public function test_general_json_schemas_keep_optional_properties_optional(): void
+    {
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'required_name' => ['type' => 'string'],
+                'optional_note' => ['type' => 'string'],
+            ],
+            'required' => ['required_name'],
+        ];
+
+        (new JsonSchemaValidator)->assert($schema, ['required_name' => 'Rick']);
+
+        self::addToAssertionCount(1);
+    }
+
     public function test_nested_validation_error_exposes_path_and_keyword_but_not_value(): void
     {
         $schema = [

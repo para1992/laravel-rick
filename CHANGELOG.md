@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-08-14
+
+- Added `StrictSchema` for consumer-defined portable strict structured-output schemas.
+- Added configuration-time validation with operation and property-level diagnostics.
+- Documented nullable fields for strict structured output.
+
 ## [0.1.0] - 2026-08-13
 
 Initial release.
@@ -14,3 +20,4 @@ Initial release.
 - Added typed metrics, budgets, pricing, retention, and operational commands.
 
 [0.1.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.1.0
+[0.2.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.2.0
