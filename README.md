@@ -132,6 +132,23 @@ $review = $rick->pendingReview($run->id);
 $rick->selectCandidate($run->id, $review->candidates[0]->id);
 ```
 
+### Generate variants and let the judge choose
+
+Use `judge()` instead of `manualJudge()` when a structured LLM invocation can
+select the best candidate and the run should complete without a human review
+barrier:
+
+```php
+$workflow = $rick->workflow('campaign-copy')
+    ->resolve('Write campaign copy.', 'The strongest draft is selected.')
+    ->draft(candidates: 3)
+    ->judge(modelPolicy: 'quality')
+    ->outputGlue('draft')
+    ->build();
+
+$run = $rick->run($workflow); // completes without pausing for review
+```
+
 ### Verify an answer against supplied evidence
 
 ```php
@@ -145,6 +162,31 @@ $workflow = $rick->workflow('grounded-answer')
     ->build();
 
 $run = $rick->run($workflow, compact('question', 'evidence'));
+```
+
+### Humanize text with the built-in recipe
+
+The `rick.humanizer` recipe rewrites text to remove clusters of AI-writing
+patterns while preserving the source language and facts. It audits the draft,
+revises it, grounds it against the source, and runs a final quality gate:
+
+```php
+use Rick\Laravel\Application\Compilation\Support\Recipe\RecipeRegistry;
+
+$workflow = app(RecipeRegistry::class)->build('rick.humanizer');
+$run = $rick->run($workflow, ['source' => $text]);
+
+$humanized = $run->artifact('humanizer.output')->content;
+```
+
+To calibrate voice, opt in and provide a separate sample:
+
+```php
+$workflow = app(RecipeRegistry::class)->build('rick.humanizer', [
+    'use_voice_sample' => true,
+]);
+
+$run = $rick->run($workflow, ['source' => $text, 'voice_sample' => $authorSample]);
 ```
 
 ## Documentation
