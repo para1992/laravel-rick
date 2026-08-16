@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-08-17
+
+- Rewrote the README top into a premium, application-first narrative: hero
+  image, badges, `Why Rick?`, `Before Rick / With Rick`, `Core features`, and
+  `Design principles`.
+- Added the hero image asset (`assets/rick-hero.png`), excluded from the
+  package archive.
+
 ## [0.4.1] - 2026-08-17
 
 - Fixed the README transactional-outbox guarantee: delivery is at least once,
@@ -103,3 +111,4 @@ Initial release.
 [0.3.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.3.0
 [0.4.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.4.0
 [0.4.1]: https://github.com/para1992/laravel-rick/releases/tag/v0.4.1
+[0.4.2]: https://github.com/para1992/laravel-rick/releases/tag/v0.4.2

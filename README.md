@@ -17,7 +17,7 @@ isolation, human input gates, and a testing façade.
   <a href="https://github.com/para1992/laravel-rick/commits/main"><img src="https://img.shields.io/github/last-commit/para1992/laravel-rick?style=flat-square" alt="Last commit"></a>
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.3+">
   <img src="https://img.shields.io/badge/Laravel-12%20%7C%2013-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 12 | 13">
-  <a href="https://github.com/para1992/laravel-rick/releases"><img src="https://img.shields.io/badge/version-0.4.1-0ea5e9?style=flat-square" alt="Version 0.4.1"></a>
+  <a href="https://github.com/para1992/laravel-rick/releases"><img src="https://img.shields.io/badge/version-0.4.2-0ea5e9?style=flat-square" alt="Version 0.4.2"></a>
 </p>
 
 ## Why Rick?
