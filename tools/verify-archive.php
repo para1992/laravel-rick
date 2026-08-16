@@ -44,7 +44,7 @@ foreach ($required as $file) {
 }
 
 $rootFiles = ['CHANGELOG.md', 'LICENSE', 'README.md', 'composer.json'];
-$prefixes = ['config/', 'database/', 'docs/', 'src/'];
+$prefixes = ['config/', 'database/', 'docs/', 'src/', 'stubs/'];
 foreach ($files as $file) {
     $allowed = in_array($file, $rootFiles, true);
     foreach ($prefixes as $allowedPrefix) {

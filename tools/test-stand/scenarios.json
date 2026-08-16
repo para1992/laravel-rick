@@ -3,11 +3,11 @@
     "scenarios": [
         {"id":"stand-integrity","lane":"fast","covers":[],"fixtures":["synthetic-text-success"],"test":"Rick\\Stand\\Tests\\Feature\\StandIntegrityTest::test_manifest_inventory_and_fixtures_are_fail_closed"},
         {"id":"public-consumer","lane":"fast","covers":[
-            "public.compile","public.delivery","public.metrics","public.resume","public.run","public.runs","public.schedule","public.snapshot","public.timeline","public.workflow"
+            "public.compile","public.delivery","public.fake","public.metrics","public.resume","public.run","public.runs","public.schedule","public.snapshot","public.timeline","public.workflow"
         ],"fixtures":[],"test":"Rick\\Stand\\Tests\\Feature\\ConsumerFlowTest::test_public_api_compiles_through_rick_and_facade"},
         {"id":"offline-execution","lane":"fast","covers":[
             "capability.documentation.quick_start","capability.observability.attempt_diagnostics","capability.observability.run_index","capability.observability.timeline_delivery","capability.testing.fake_gateway","capability.transport.versioned_read_dtos",
-            "use_case.ContinueRun","use_case.ExecuteInvocation","use_case.FailInvocation","use_case.GetDeliverySnapshot","use_case.GetPendingInput","use_case.GetPendingReview","use_case.GetRunMetrics","use_case.GetRunSnapshot","use_case.GetRunTimeline","use_case.ListRuns","use_case.RecoverRun","use_case.ResumeRun","use_case.RunWorkflow","use_case.ScheduleRun","use_case.SelectCandidate","use_case.SubmitInput"
+            "use_case.ContinueRun","use_case.ExecuteInvocation","use_case.FailInvocation","use_case.GetDeliverySnapshot","use_case.GetPendingInput","use_case.GetPendingReview","use_case.GetRunMetrics","use_case.GetRunProgress","use_case.GetRunSnapshot","use_case.GetRunTimeline","use_case.ListRuns","use_case.RecoverRun","use_case.ResumeRun","use_case.RunWorkflow","use_case.ScheduleRun","use_case.SelectCandidate","use_case.SubmitInput"
         ],"fixtures":["openrouter-gemini-20260801-raw"],"test":"Rick\\Stand\\Tests\\Feature\\ConsumerFlowTest::test_offline_run_exposes_read_apis_and_internal_requests_use_handler"},
         {"id":"interactions","lane":"fast","covers":[
             "public.pendingInput","public.pendingInteraction","public.pendingReview","public.selectCandidate","public.submitInput","use_case.GetPendingInteraction"
@@ -17,7 +17,7 @@
         ],"fixtures":[],"test":"Rick\\Stand\\Tests\\Feature\\ConsumerFlowTest::test_public_operator_operations_are_offline_and_idempotent"},
         {"id":"strategies","lane":"fast","covers":[
             "capability.workflow.branch","capability.workflow.compilation","capability.workflow.context","capability.workflow.define_dod","capability.workflow.edit","capability.workflow.generate","capability.workflow.grounded_verify","capability.workflow.join","capability.workflow.judge.manual","capability.workflow.map","capability.workflow.operation","capability.workflow.output_glue","capability.workflow.parallel","capability.workflow.quality_gate","capability.workflow.raw_prompt","capability.workflow.resolve","capability.workflow.unfold","capability.workflow.wait_for_input",
-            "strategy.await_human","strategy.branch","strategy.context","strategy.define_dod","strategy.edit","strategy.generate","strategy.grounded_verify","strategy.join","strategy.judge","strategy.map","strategy.operation","strategy.output_glue","strategy.parallel","strategy.quality_gate","strategy.raw_prompt","strategy.resolve","strategy.unfold","strategy.wait_for_input"
+            "strategy.agent","strategy.application","strategy.await_human","strategy.branch","strategy.context","strategy.define_dod","strategy.edit","strategy.generate","strategy.grounded_verify","strategy.join","strategy.judge","strategy.map","strategy.operation","strategy.output_glue","strategy.parallel","strategy.quality_gate","strategy.raw_prompt","strategy.resolve","strategy.unfold","strategy.wait_for_input"
         ],"fixtures":[],"test":"Rick\\Stand\\Tests\\Feature\\PersistenceAndExtensionsTest::test_recipes_operations_quality_and_commands_are_registered"},
         {"id":"response-contracts","lane":"fast","covers":[
             "capability.runtime.candidate_quorum","capability.runtime.cost_reservation","capability.runtime.indeterminate_recovery","capability.runtime.retry_attempt_ledger","capability.runtime.safe_http_4xx_outcomes","capability.runtime.safe_provider_outcomes","capability.runtime.structured_response_retry","capability.validation.identifiers","capability.validation.json_schema","capability.validation.structured_output_portability","capability.validation.structured_response_diagnostics",
@@ -45,7 +45,7 @@
         ],"fixtures":[],"test":"Rick\\Stand\\Tests\\Feature\\PersistenceAndExtensionsTest::test_versioned_codec_round_trip_and_future_schema_fail_closed"},
         {"id":"extensions-tooling","lane":"fast","covers":[
             "capability.recipes.built_in","capability.tooling.console","capability.validation.configuration","capability.validation.published_configuration",
-            "command.rick:diagnose","command.rick:invocation:resolve","command.rick:migrate-legacy","command.rick:outbox:relay","command.rick:outbox:retry","command.rick:prune","command.rick:recipes","command.rick:recover","command.rick:run","command.rick:run:recover",
+            "command.make:rick-workflow","command.rick:diagnose","command.rick:invocation:resolve","command.rick:migrate-legacy","command.rick:outbox:relay","command.rick:outbox:retry","command.rick:prune","command.rick:recipes","command.rick:recover","command.rick:run","command.rick:run:recover",
             "operation.rick.humanizer.audit","operation.rick.humanizer.draft","operation.rick.humanizer.grounding_repair","operation.rick.humanizer.revise","operation.rick.humanizer.taste_audit","operation.rick.repair.text","operation.rick.text","operation.rick.verify.grounded",
         "prompt.rick.step.define_dod","prompt.rick.step.edit","prompt.rick.step.generate","prompt.rick.step.judge","prompt.rick.step.map","prompt.rick.step.parallel","prompt.rick.step.unfold.candidate","prompt.rick.step.unfold.units",
             "quality_policy.BoundedRepairPolicy","quality_policy.FailRepairPolicy","quality_rule.minimum_characters","quality_rule_set.non_empty",
