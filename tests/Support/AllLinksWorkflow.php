@@ -8,6 +8,8 @@ use Rick\Laravel\Domain\Workflow\OperationCall;
 use Rick\Laravel\Domain\Workflow\ValueObject\DefinitionOfDone;
 use Rick\Laravel\Domain\Workflow\ValueObject\WorkflowDefinition;
 use Rick\Laravel\Rick;
+use Rick\Laravel\Tests\Support\Agents\ExtractClaimFacts;
+use Rick\Laravel\Tests\Support\WorkflowSteps\LoadClaim;
 
 final class AllLinksWorkflow
 {
@@ -28,6 +30,8 @@ final class AllLinksWorkflow
                 'Exercise every Rick workflow link with terse outputs; preserve literal markers.',
                 DefinitionOfDone::automatic(),
             )
+            ->step(LoadClaim::class, as: 'all-links-load', label: 'Loading claim')
+            ->agent(ExtractClaimFacts::class, as: 'all-links-facts', label: 'Extracting claim facts')
             ->context('source')
             ->context('evidence')
             ->context('collection')

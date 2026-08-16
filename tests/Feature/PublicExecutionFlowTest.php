@@ -1433,7 +1433,7 @@ final class PublicExecutionFlowTest extends TestCase
             'evidence' => 'RICK_ALL_LINKS_OK confirms every registered workflow link is exercised',
             'collection' => ['items' => ['RICK_MAP_OK']],
             'condition' => 'yes',
-        ], callLimit: 10);
+        ], callLimit: 11);
 
         self::assertSame(
             RunStatus::AwaitingInput,
@@ -1467,7 +1467,7 @@ final class PublicExecutionFlowTest extends TestCase
                 'metrics' => $rick->metrics($waitingForInput->id),
             ], JSON_THROW_ON_ERROR),
         );
-        self::assertSame(10, $completed->callsUsed);
+        self::assertSame(11, $completed->callsUsed);
         self::assertSame('true', $completed->artifact('selected')->metadata['branch']);
         self::assertTrue($completed->artifact('checked.quality')->payload['passed']);
         self::assertTrue($completed->artifact('verified.verification')->payload['passed']);

@@ -196,14 +196,14 @@ final class OpenRouterPackageSmokeTest extends TestCase
             'evidence' => 'RICK_ALL_LINKS_OK confirms every registered workflow link is exercised',
             'collection' => ['items' => ['RICK_MAP_OK']],
             'condition' => 'yes',
-        ], callLimit: 10);
+        ], callLimit: 11);
 
         self::assertSame(
             RunStatus::AwaitingInput,
             $waitingForInput->status,
             $this->diagnostic($rick, $waitingForInput),
         );
-        self::assertSame(1, $waitingForInput->callsUsed);
+        self::assertSame(2, $waitingForInput->callsUsed);
         self::assertSame('approval', $rick->pendingInput($waitingForInput->id)->key);
 
         $afterInput = $rick->submitInput(
@@ -237,7 +237,7 @@ final class OpenRouterPackageSmokeTest extends TestCase
             static fn (array $state): bool => isset($state['phase'], $state['memory']),
         ))[0] ?? [];
         self::assertSame('complete', $unfoldState['phase'] ?? null);
-        $this->assertMeasuredOpenRouterCalls($metrics, 10, self::maxAllLinksCost());
+        $this->assertMeasuredOpenRouterCalls($metrics, 11, self::maxAllLinksCost());
         self::record('all_built_in_links', $completed, $metrics, self::maxAllLinksCost());
     }
 
