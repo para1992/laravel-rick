@@ -11,7 +11,7 @@ use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\ValueObject\StepId;
 use Rick\Laravel\Domain\Workflow\ValueObject\StepType;
 
-final readonly class ApplicationStep implements ArtifactStepBase, StepBase, LabeledStepBase
+final readonly class ApplicationStep implements ArtifactStepBase, LabeledStepBase, StepBase
 {
     /**
      * @param  list<string>  $reads

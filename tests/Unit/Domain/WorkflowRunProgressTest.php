@@ -7,6 +7,7 @@ namespace Rick\Laravel\Tests\Unit\Domain;
 use PHPUnit\Framework\TestCase;
 use Rick\Laravel\Domain\Run\RunInput;
 use Rick\Laravel\Domain\Run\RunStatus;
+use Rick\Laravel\Domain\Run\StepOutcome;
 use Rick\Laravel\Domain\Run\ValueObject\RunId;
 use Rick\Laravel\Domain\Run\WorkflowRun;
 use Rick\Laravel\Domain\Workflow\Step\ApplicationStep;
@@ -39,9 +40,9 @@ final class WorkflowRunProgressTest extends TestCase
     {
         $run = $this->startRun();
         $run->beginStep(StepId::fromString('load-claim'));
-        $run->completeStep(StepId::fromString('load-claim'), \Rick\Laravel\Domain\Run\StepOutcome::completion([]));
+        $run->completeStep(StepId::fromString('load-claim'), StepOutcome::completion([]));
         $run->beginStep(StepId::fromString('output'));
-        $run->completeStep(StepId::fromString('output'), \Rick\Laravel\Domain\Run\StepOutcome::completion([]));
+        $run->completeStep(StepId::fromString('output'), StepOutcome::completion([]));
 
         $progress = $run->progress();
         self::assertSame(RunStatus::Completed, $progress->status);

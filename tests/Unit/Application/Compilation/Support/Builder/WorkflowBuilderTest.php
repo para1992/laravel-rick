@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Rick\Laravel\Tests\Unit\Application\Compilation\Support\Builder;
 
+use InvalidArgumentException;
 use LogicException;
 use PHPUnit\Framework\TestCase;
-use InvalidArgumentException;
 use Rick\Laravel\Application\Compilation\Support\Builder\ParallelBuilder;
 use Rick\Laravel\Application\Compilation\Support\Builder\WorkflowBuilder;
 use Rick\Laravel\Domain\Workflow\Step\AgentStep;
