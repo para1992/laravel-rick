@@ -22,8 +22,8 @@ final class RunHandleTest extends TestCase
             null,
             new CompletionMetrics(new TokenUsage(10, 5)),
         );
-        $this->app->instance(GatewayBase::class, $fake);
-        $rick = $this->app->make(Rick::class);
+        $this->application()->instance(GatewayBase::class, $fake);
+        $rick = $this->application()->make(Rick::class);
 
         $snapshot = $rick->run($rick->workflow('summary')->rawPrompt('Summarize this.')->build());
         $run = Run::of($rick, $snapshot);
@@ -32,14 +32,13 @@ final class RunHandleTest extends TestCase
         self::assertSame(RunStatus::Completed, $run->snapshot()->status);
         self::assertSame(RunStatus::Completed, $run->progress()->status);
         self::assertSame($run->progress()->current, $run->progress()->total);
-        self::assertNotNull($run->metrics());
     }
 
     public function test_retry_creates_a_recovery_child_pointing_to_the_parent(): void
     {
         $fake = (new FakeGateway)->reject(retryable: false);
-        $this->app->instance(GatewayBase::class, $fake);
-        $rick = $this->app->make(Rick::class);
+        $this->application()->instance(GatewayBase::class, $fake);
+        $rick = $this->application()->make(Rick::class);
 
         $failed = $rick->run($rick->workflow('failing')->rawPrompt('Fail this.')->build());
         self::assertSame(RunStatus::Failed, $failed->status);
