@@ -6,6 +6,8 @@ namespace Rick\Laravel\Tests\Unit\Infrastructure\Persistence\Json;
 
 use PHPUnit\Framework\TestCase;
 use Rick\Laravel\Application\Compilation\Interface\StepCodecBase;
+use Rick\Laravel\Domain\Workflow\Step\AgentStep;
+use Rick\Laravel\Domain\Workflow\Step\ApplicationStep;
 use Rick\Laravel\Domain\Workflow\Step\JudgeStep;
 use Rick\Laravel\Domain\Workflow\Step\RawPromptStep;
 use Rick\Laravel\Domain\Workflow\Step\ResolveStep;
@@ -112,6 +114,36 @@ final class WorkflowStepCodecTest extends TestCase
         ]);
         self::assertInstanceOf(WaitForInputStep::class, $input);
         self::assertNull($input->schema);
+    }
+
+    public function test_application_step_round_trips_through_the_versioned_codec(): void
+    {
+        $codec = new WorkflowStepCodec;
+        $step = new ApplicationStep(
+            StepId::fromString('load-claim'),
+            'App\\WorkflowSteps\\LoadClaim',
+            handlerVersion: 2,
+            label: 'Loading claim',
+            reads: ['claim_id'],
+        );
+
+        self::assertEquals($step, $codec->decode($codec->encode($step)));
+    }
+
+    public function test_agent_step_round_trips_through_the_versioned_codec(): void
+    {
+        $codec = new WorkflowStepCodec;
+        $step = new AgentStep(
+            StepId::fromString('extract-facts'),
+            'App\\Ai\\Agents\\ExtractClaimFacts',
+            agentVersion: 3,
+            label: 'Extracting facts',
+            modelPolicy: 'quality',
+            prompt: 'Extract the facts.',
+            reads: ['claim'],
+        );
+
+        self::assertEquals($step, $codec->decode($codec->encode($step)));
     }
 
     public function test_custom_codec_registration_and_decode_contract_fail_closed(): void

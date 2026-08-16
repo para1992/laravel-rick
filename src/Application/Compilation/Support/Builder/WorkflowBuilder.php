@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Rick\Laravel\Application\Compilation\Support\Builder;
 
 use Closure;
+use InvalidArgumentException;
 use Rick\Laravel\Domain\Metrics\ValueObject\InvocationCost;
 use Rick\Laravel\Domain\Run\ValueObject\ResourceBudget;
 use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\OperationCall;
+use Rick\Laravel\Domain\Workflow\Step\AgentStep;
+use Rick\Laravel\Domain\Workflow\Step\ApplicationStep;
 use Rick\Laravel\Domain\Workflow\Step\AwaitHumanStep;
 use Rick\Laravel\Domain\Workflow\Step\BranchStep;
 use Rick\Laravel\Domain\Workflow\Step\ContextStep;
@@ -385,14 +388,14 @@ final class WorkflowBuilder
     /** @param array<string, mixed>|null $schema */
     public function awaitHuman(
         string $key,
-        string $prompt,
+        ?string $prompt = null,
         ?array $schema = null,
         string $artifactType = 'approval',
     ): self {
         $this->steps[] = new AwaitHumanStep(
             $this->id('await_human'),
             $key,
-            $prompt,
+            $prompt ?? $key,
             ArtifactType::fromString($artifactType),
             $schema,
         );
@@ -407,9 +410,54 @@ final class WorkflowBuilder
         return $this;
     }
 
-    public function step(StepBase $step): self
+    public function output(?string $artifactKey = null): self
     {
+        return $this->outputGlue($artifactKey);
+    }
+
+    public function step(string|StepBase $step, ?string $as = null, ?string $label = null): self
+    {
+        if (is_string($step)) {
+            if ($as === null || trim($as) === '') {
+                throw new InvalidArgumentException('An application step requires a stable alias (as:).');
+            }
+
+            $this->steps[] = new ApplicationStep(
+                StepId::fromString($as),
+                $step,
+                label: $label,
+            );
+
+            return $this;
+        }
+
+        if ($as !== null || $label !== null) {
+            throw new InvalidArgumentException('A custom step object does not accept an alias or label.');
+        }
+
         $this->steps[] = $step;
+
+        return $this;
+    }
+
+    public function agent(
+        string $agentClass,
+        string $as,
+        ?string $label = null,
+        string $modelPolicy = 'medium',
+        ?string $prompt = null,
+    ): self {
+        if (trim($as) === '') {
+            throw new InvalidArgumentException('An agent step requires a stable alias (as:).');
+        }
+
+        $this->steps[] = new AgentStep(
+            StepId::fromString($as),
+            $agentClass,
+            label: $label,
+            modelPolicy: $modelPolicy,
+            prompt: $prompt,
+        );
 
         return $this;
     }

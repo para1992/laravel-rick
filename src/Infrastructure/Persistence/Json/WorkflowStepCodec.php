@@ -7,6 +7,8 @@ namespace Rick\Laravel\Infrastructure\Persistence\Json;
 use Rick\Laravel\Application\Compilation\Interface\StepCodecBase;
 use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\OperationCall;
+use Rick\Laravel\Domain\Workflow\Step\AgentStep;
+use Rick\Laravel\Domain\Workflow\Step\ApplicationStep;
 use Rick\Laravel\Domain\Workflow\Step\AwaitHumanStep;
 use Rick\Laravel\Domain\Workflow\Step\BranchStep;
 use Rick\Laravel\Domain\Workflow\Step\ContextStep;
@@ -164,6 +166,20 @@ final readonly class WorkflowStepCodec
                 'artifact_type' => $step->artifactType->toString(),
                 'schema' => $step->schema,
             ],
+            $step instanceof ApplicationStep => [
+                'handler_class' => $step->handlerClass,
+                'handler_version' => $step->handlerVersion,
+                'label' => $step->label,
+                'reads' => $step->reads,
+            ],
+            $step instanceof AgentStep => [
+                'agent_class' => $step->agentClass,
+                'agent_version' => $step->agentVersion,
+                'label' => $step->label,
+                'model_policy' => $step->modelPolicy,
+                'prompt' => $step->prompt,
+                'reads' => $step->reads,
+            ],
             default => $this->encodeCustom($step),
         };
     }
@@ -314,6 +330,22 @@ final readonly class WorkflowStepCodec
                 ($data['schema'] ?? null) === null
                     ? null
                     : JsonInput::map($data['schema'], 'workflow step.schema'),
+            ),
+            'application' => new ApplicationStep(
+                $id,
+                JsonInput::string($data['handler_class'] ?? null, 'workflow step.handler_class'),
+                JsonInput::integer($data['handler_version'] ?? null, 'workflow step.handler_version'),
+                JsonInput::nullableString($data['label'] ?? null, 'workflow step.label'),
+                JsonInput::strings($data['reads'] ?? null, 'workflow step.reads'),
+            ),
+            'agent' => new AgentStep(
+                $id,
+                JsonInput::string($data['agent_class'] ?? null, 'workflow step.agent_class'),
+                JsonInput::integer($data['agent_version'] ?? null, 'workflow step.agent_version'),
+                JsonInput::nullableString($data['label'] ?? null, 'workflow step.label'),
+                JsonInput::string($data['model_policy'] ?? null, 'workflow step.model_policy'),
+                JsonInput::nullableString($data['prompt'] ?? null, 'workflow step.prompt'),
+                JsonInput::strings($data['reads'] ?? null, 'workflow step.reads'),
             ),
             default => $this->decodeCustom($id, $data),
         };

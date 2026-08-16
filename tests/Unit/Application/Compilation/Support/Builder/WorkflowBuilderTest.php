@@ -6,11 +6,16 @@ namespace Rick\Laravel\Tests\Unit\Application\Compilation\Support\Builder;
 
 use LogicException;
 use PHPUnit\Framework\TestCase;
+use InvalidArgumentException;
 use Rick\Laravel\Application\Compilation\Support\Builder\ParallelBuilder;
 use Rick\Laravel\Application\Compilation\Support\Builder\WorkflowBuilder;
+use Rick\Laravel\Domain\Workflow\Step\AgentStep;
+use Rick\Laravel\Domain\Workflow\Step\ApplicationStep;
+use Rick\Laravel\Domain\Workflow\Step\AwaitHumanStep;
 use Rick\Laravel\Domain\Workflow\Step\GenerateStep;
 use Rick\Laravel\Domain\Workflow\Step\GroundedVerifyStep;
 use Rick\Laravel\Domain\Workflow\Step\JudgeStep;
+use Rick\Laravel\Domain\Workflow\Step\OutputGlueStep;
 use Rick\Laravel\Domain\Workflow\Step\ParallelStep;
 use Rick\Laravel\Domain\Workflow\Step\RawPromptStep;
 use Rick\Laravel\Domain\Workflow\Step\UnfoldStep;
@@ -185,5 +190,65 @@ final class WorkflowBuilderTest extends TestCase
         self::assertSame('raw_prompt', $definition->steps[0]->type()->toString());
         self::assertSame('  Preserve this prompt exactly.  ', $definition->steps[0]->prompt);
         self::assertSame('quality', $definition->steps[0]->modelPolicyId);
+    }
+
+    public function test_step_accepts_an_invokable_class_with_a_stable_alias(): void
+    {
+        $steps = WorkflowBuilder::named('claim')
+            ->step('App\\WorkflowSteps\\LoadClaim', as: 'load-claim', label: 'Loading claim')
+            ->build()
+            ->steps;
+
+        self::assertCount(1, $steps);
+        self::assertInstanceOf(ApplicationStep::class, $steps[0]);
+        self::assertSame('load-claim', $steps[0]->id()->toString());
+        self::assertSame('application', $steps[0]->type()->toString());
+        self::assertSame('App\\WorkflowSteps\\LoadClaim', $steps[0]->handlerClass);
+        self::assertSame('Loading claim', $steps[0]->label());
+    }
+
+    public function test_step_rejects_an_invokable_class_without_an_alias(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        WorkflowBuilder::named('claim')->step('App\\WorkflowSteps\\LoadClaim');
+    }
+
+    public function test_agent_builds_an_agent_step(): void
+    {
+        $steps = WorkflowBuilder::named('claim')
+            ->agent('App\\Ai\\Agents\\ExtractFacts', as: 'facts', label: 'Extracting facts', modelPolicy: 'quality')
+            ->build()
+            ->steps;
+
+        self::assertCount(1, $steps);
+        self::assertInstanceOf(AgentStep::class, $steps[0]);
+        self::assertSame('facts', $steps[0]->id()->toString());
+        self::assertSame('agent', $steps[0]->type()->toString());
+        self::assertSame('App\\Ai\\Agents\\ExtractFacts', $steps[0]->agentClass);
+        self::assertSame('quality', $steps[0]->modelPolicy);
+    }
+
+    public function test_output_is_an_alias_for_output_glue(): void
+    {
+        $step = WorkflowBuilder::named('claim')
+            ->output('decision')
+            ->build()
+            ->steps[0];
+
+        self::assertInstanceOf(OutputGlueStep::class, $step);
+        self::assertSame('decision', $step->artifactKey);
+    }
+
+    public function test_await_human_prompt_defaults_to_the_input_key(): void
+    {
+        $step = WorkflowBuilder::named('claim')
+            ->awaitHuman('signoff', schema: ['approved' => ['required', 'boolean']])
+            ->build()
+            ->steps[0];
+
+        self::assertInstanceOf(AwaitHumanStep::class, $step);
+        self::assertSame('signoff', $step->prompt);
+        self::assertSame(['approved' => ['required', 'boolean']], $step->schema);
     }
 }
