@@ -1,6 +1,24 @@
 # Public API and compatibility
 
-The supported entry points are `Rick`, its Facade, workflow builders, Domain
+The application-facing layer lives at the top-level `Rick\Laravel` namespace so
+consumers never import deep module namespaces for common workflows:
+
+```php
+use Rick\Laravel\Workflow;
+use Rick\Laravel\WorkflowBuilder;
+use Rick\Laravel\WorkflowState;
+use Rick\Laravel\Run;
+```
+
+- `Workflow` — an abstract base class (`name()`, `version()`, `build()`, static
+  `start()` and `definition()`).
+- `WorkflowBuilder` — the public builder (`step()`, `agent()`, `awaitHuman()`,
+  `output()`, `budget()`, and the existing primitives).
+- `WorkflowState` — a mutable facade over a run's input and artifacts.
+- `Run` — a read/action handle over a persisted run.
+- `Testing\RickFake` — returned by `Rick::fake()` for high-level tests.
+
+The supported entry points remain `Rick`, its Facade, workflow builders, Domain
 inputs and outputs, and the extension interfaces listed in
 [extensions.md](extensions.md).
 
@@ -9,7 +27,7 @@ inputs and outputs, and the extension interfaces listed in
 ```text
 workflow compile run schedule resume snapshot metrics runs timeline delivery
 recover pendingInteraction pendingReview pendingInput submitInput
-selectCandidate relayOutbox
+selectCandidate relayOutbox fake
 ```
 
 `run()` and `schedule()` accept `WorkflowDefinition|CompiledWorkflow`.

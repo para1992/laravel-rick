@@ -1,5 +1,32 @@
 # Testing workflows without provider transport
 
+## High-level fake
+
+`Rick::fake()` swaps in the package `FakeGateway` and returns a `RickFake` with
+application-oriented assertions. Test a normal workflow without importing
+low-level completion types:
+
+```php
+use Rick\Laravel\Rick;
+use App\Workflows\ClaimDecisionWorkflow;
+
+$fake = app(Rick::class)->fake();
+$fake->agent('facts', 'The claimant was in a rear-end collision.');
+$fake->agent('risk', 'Low risk.');
+
+$run = ClaimDecisionWorkflow::start(['claim_id' => 42]);
+
+$fake->assertStepRan($run, 'load-claim');
+$fake->assertStepRan($run, 'risk');
+$fake->assertAwaitingHuman($run);
+$fake->assertProviderAttempts(2);
+```
+
+`RickFake` reuses the existing `FakeGateway` and asserts against the real
+snapshot and timeline, so it is not a second runtime. Available assertions:
+`assertStepRan`, `assertAwaitingHuman`, `assertProviderAttempts`,
+`assertRunRecoveredFrom`.
+
 For the complete fail-closed consumer harness, use the standalone
 [`tools/test-stand`](../tools/test-stand/README.md) project. Its fast lane is
 part of `composer qa`; full infrastructure, compatibility, and archive lanes
