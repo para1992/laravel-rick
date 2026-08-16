@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Rick\Laravel\Tests\Unit\Application\Execution\Support\Llm\Agent;
 
 use Illuminate\Broadcasting\Channel;
-use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Model;
 use Laravel\Ai\Attributes\Provider;
@@ -95,11 +94,15 @@ final class AgentRequestFactoryTest extends TestCase
 
     public function test_it_rejects_agents_that_declare_approvals(): void
     {
+        if (! interface_exists('Laravel\\Ai\\Contracts\\Approvable')) {
+            self::markTestSkipped('Approvable requires Laravel AI 0.10+.');
+        }
+
         try {
             $this->factory->create(ApprovalAgent::class, 'approver', 'Ask for approval.');
             self::fail('Expected the approval capability to be rejected.');
         } catch (UnsupportedAgentCapabilityException $exception) {
-            self::assertSame(Approvable::class, $exception->capability);
+            self::assertSame('Laravel\\Ai\\Contracts\\Approvable', $exception->capability);
         }
     }
 
@@ -157,7 +160,7 @@ abstract class FakeAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function prompt(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -171,7 +174,7 @@ abstract class FakeAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function stream(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -185,7 +188,7 @@ abstract class FakeAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function queue(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -199,7 +202,7 @@ abstract class FakeAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function broadcast(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         bool $now = false,
@@ -215,7 +218,7 @@ abstract class FakeAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function broadcastNow(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         Lab|array|string|null $provider = null,
@@ -230,7 +233,7 @@ abstract class FakeAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function broadcastOnQueue(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         Lab|array|string|null $provider = null,
@@ -311,26 +314,28 @@ final class ToolsAgent extends FakeAgent implements HasTools
     }
 }
 
-final class ApprovalAgent extends FakeAgent implements Approvable
-{
-    public function instructions(): string
+if (interface_exists('Laravel\\Ai\\Contracts\\Approvable')) {
+    final class ApprovalAgent extends FakeAgent implements Approvable
     {
-        return 'Ask before acting.';
-    }
+        public function instructions(): string
+        {
+            return 'Ask before acting.';
+        }
 
-    public function requireApproval(?string $reason = null): static
-    {
-        return $this;
-    }
+        public function requireApproval(?string $reason = null): static
+        {
+            return $this;
+        }
 
-    public function withoutApproval(): static
-    {
-        return $this;
-    }
+        public function withoutApproval(): static
+        {
+            return $this;
+        }
 
-    public function shouldRequestApproval(Request $request): never
-    {
-        throw new LogicException('The adapted agent must never run tool requests.');
+        public function shouldRequestApproval(Request $request): never
+        {
+            throw new LogicException('The adapted agent must never run tool requests.');
+        }
     }
 }
 

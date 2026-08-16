@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Rick\Laravel\Tests\Unit\Application\Execution\Strategy;
 
 use Illuminate\Broadcasting\Channel;
-use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use LogicException;
@@ -201,7 +200,7 @@ abstract class AgentStepTestAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function prompt(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -215,7 +214,7 @@ abstract class AgentStepTestAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function stream(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -229,7 +228,7 @@ abstract class AgentStepTestAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function queue(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -243,7 +242,7 @@ abstract class AgentStepTestAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function broadcast(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         bool $now = false,
@@ -259,7 +258,7 @@ abstract class AgentStepTestAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function broadcastNow(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         Lab|array|string|null $provider = null,
@@ -274,7 +273,7 @@ abstract class AgentStepTestAgent implements Agent
      * @param  Lab|array<array-key, mixed>|string|null  $provider
      */
     public function broadcastOnQueue(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         Lab|array|string|null $provider = null,

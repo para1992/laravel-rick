@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Rick\Laravel\Tests\Support\Agents;
 
 use Illuminate\Broadcasting\Channel;
-use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Responses\AgentResponse;
@@ -28,7 +27,7 @@ abstract class FixtureAgent implements Agent
      * @param  Lab|array<mixed, mixed>|string|null  $provider
      */
     public function prompt(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -42,7 +41,7 @@ abstract class FixtureAgent implements Agent
      * @param  Lab|array<mixed, mixed>|string|null  $provider
      */
     public function stream(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -56,7 +55,7 @@ abstract class FixtureAgent implements Agent
      * @param  Lab|array<mixed, mixed>|string|null  $provider
      */
     public function queue(
-        Decisions|string $prompt,
+        mixed $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -70,7 +69,7 @@ abstract class FixtureAgent implements Agent
      * @param  Lab|array<mixed, mixed>|string|null  $provider
      */
     public function broadcast(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         bool $now = false,
@@ -86,7 +85,7 @@ abstract class FixtureAgent implements Agent
      * @param  Lab|array<mixed, mixed>|string|null  $provider
      */
     public function broadcastNow(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         Lab|array|string|null $provider = null,
@@ -101,7 +100,7 @@ abstract class FixtureAgent implements Agent
      * @param  Lab|array<mixed, mixed>|string|null  $provider
      */
     public function broadcastOnQueue(
-        Decisions|string $prompt,
+        mixed $prompt,
         Channel|array $channels,
         array $attachments = [],
         Lab|array|string|null $provider = null,

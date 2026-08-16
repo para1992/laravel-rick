@@ -12,7 +12,6 @@ use Laravel\Ai\Attributes\Provider;
 use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Attributes\TopP;
 use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Contracts\Approvable;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Contracts\Schemable;
@@ -41,7 +40,7 @@ final readonly class AgentRequestFactory
         string $modelPolicy = 'medium',
         array $metadata = [],
     ): CompletionRequest {
-        foreach ([HasTools::class, Approvable::class, Conversational::class] as $capability) {
+        foreach ([HasTools::class, Conversational::class] as $capability) {
             if (is_a($agentClass, $capability, true)) {
                 throw new UnsupportedAgentCapabilityException(
                     sprintf(
@@ -52,6 +51,22 @@ final readonly class AgentRequestFactory
                     $capability,
                 );
             }
+        }
+
+        // Approvable exists only on Laravel AI >= 0.10; guard it by string so
+        // the 0.9 lane (which lacks the interface) still compiles and runs.
+        if (
+            interface_exists('Laravel\\Ai\\Contracts\\Approvable')
+            && is_a($agentClass, 'Laravel\\Ai\\Contracts\\Approvable', true)
+        ) {
+            throw new UnsupportedAgentCapabilityException(
+                sprintf(
+                    'Agent class [%s] declares the unsupported capability [%s]; it can issue multiple provider requests that Rick cannot account for in one audited call.',
+                    $agentClass,
+                    'Laravel\\Ai\\Contracts\\Approvable',
+                ),
+                'Laravel\\Ai\\Contracts\\Approvable',
+            );
         }
 
         if (! is_a($agentClass, Agent::class, true)) {
