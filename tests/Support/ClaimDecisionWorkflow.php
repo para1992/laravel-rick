@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Rick\Laravel\Tests\Support;
 
-use Rick\Laravel\Application\Compilation\Support\Builder\WorkflowBuilder;
 use Rick\Laravel\Tests\Support\Agents\ExtractClaimFacts;
 use Rick\Laravel\Tests\Support\Agents\FlagRisk;
 use Rick\Laravel\Tests\Support\WorkflowSteps\LoadClaim;
 use Rick\Laravel\Tests\Support\WorkflowSteps\StoreDecision;
 use Rick\Laravel\Workflow;
+use Rick\Laravel\WorkflowBuilder;
 
 final class ClaimDecisionWorkflow extends Workflow
 {

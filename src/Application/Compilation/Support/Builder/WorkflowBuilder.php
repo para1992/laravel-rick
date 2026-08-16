@@ -34,7 +34,10 @@ use Rick\Laravel\Domain\Workflow\ValueObject\DefinitionOfDone;
 use Rick\Laravel\Domain\Workflow\ValueObject\StepId;
 use Rick\Laravel\Domain\Workflow\ValueObject\WorkflowDefinition;
 
-final class WorkflowBuilder
+/**
+ * @phpstan-consistent-constructor
+ */
+class WorkflowBuilder
 {
     /** @var list<StepBase> */
     private array $steps = [];
@@ -52,19 +55,19 @@ final class WorkflowBuilder
         $this->name = trim($name);
     }
 
-    public static function named(string $name): self
+    public static function named(string $name): static
     {
-        return new self($name);
+        return new static($name);
     }
 
-    public function version(string $version): self
+    public function version(string $version): static
     {
         $this->version = trim($version);
 
         return $this;
     }
 
-    public function resourceBudget(ResourceBudget $budget): self
+    public function resourceBudget(ResourceBudget $budget): static
     {
         $this->budget = $budget;
 
@@ -81,7 +84,7 @@ final class WorkflowBuilder
         int $defaultOutputReservationTokens = 2048,
         bool $requireCompleteMetrics = false,
         bool $requireKnownPricing = true,
-    ): self {
+    ): static {
         return $this->resourceBudget(new ResourceBudget(
             $maxInputTokens,
             $maxOutputTokens,
@@ -95,7 +98,7 @@ final class WorkflowBuilder
         ));
     }
 
-    public function resolve(string $task, string|DefinitionOfDone $dod): self
+    public function resolve(string $task, string|DefinitionOfDone $dod): static
     {
         $this->steps[] = new ResolveStep(
             $this->id('resolve'),
@@ -106,7 +109,7 @@ final class WorkflowBuilder
         return $this;
     }
 
-    public function rawPrompt(string $prompt, string $modelPolicy = 'default'): self
+    public function rawPrompt(string $prompt, string $modelPolicy = 'default'): static
     {
         $this->steps[] = new RawPromptStep(
             $this->id('raw_prompt'),
@@ -117,17 +120,17 @@ final class WorkflowBuilder
         return $this;
     }
 
-    public function angle(int $candidates = 3, ?int $minimumSuccessful = null): self
+    public function angle(int $candidates = 3, ?int $minimumSuccessful = null): static
     {
         return $this->generate('angle', $candidates, minimumSuccessful: $minimumSuccessful);
     }
 
-    public function plan(int $candidates = 3, ?int $minimumSuccessful = null): self
+    public function plan(int $candidates = 3, ?int $minimumSuccessful = null): static
     {
         return $this->generate('plan', $candidates, minimumSuccessful: $minimumSuccessful);
     }
 
-    public function draft(int $candidates = 3, ?int $minimumSuccessful = null): self
+    public function draft(int $candidates = 3, ?int $minimumSuccessful = null): static
     {
         return $this->generate('draft', $candidates, minimumSuccessful: $minimumSuccessful);
     }
@@ -140,7 +143,7 @@ final class WorkflowBuilder
         array $reads = [],
         string $modelPolicy = 'default',
         ?int $minimumSuccessful = null,
-    ): self {
+    ): static {
         $this->steps[] = new GenerateStep(
             $this->id('generate'),
             ArtifactType::fromString($artifact),
@@ -154,7 +157,7 @@ final class WorkflowBuilder
         return $this;
     }
 
-    public function context(string $inputKey): self
+    public function context(string $inputKey): static
     {
         $this->steps[] = new ContextStep($this->id('context'), $inputKey);
 
@@ -167,7 +170,7 @@ final class WorkflowBuilder
         int $candidates = 1,
         int $maxUnits = 20,
         string $modelPolicy = 'default',
-    ): self {
+    ): static {
         $this->steps[] = new UnfoldStep(
             $this->id('unfold'),
             ArtifactType::fromString($sourceArtifact),
@@ -187,7 +190,7 @@ final class WorkflowBuilder
         int $candidates = 3,
         int $maxUnits = 20,
         string $modelPolicy = 'default',
-    ): self {
+    ): static {
         $this->steps[] = new UnfoldStep(
             $this->id('unfold'),
             ArtifactType::fromString($sourceArtifact),
@@ -201,21 +204,21 @@ final class WorkflowBuilder
         return $this;
     }
 
-    public function manualJudge(): self
+    public function manualJudge(): static
     {
         $this->steps[] = new JudgeStep($this->id('judge'));
 
         return $this;
     }
 
-    public function judge(string $modelPolicy = 'quality'): self
+    public function judge(string $modelPolicy = 'quality'): static
     {
         $this->steps[] = new JudgeStep($this->id('judge'), true, $modelPolicy);
 
         return $this;
     }
 
-    public function edit(string $mode = 'strict', string $modelPolicy = 'default'): self
+    public function edit(string $mode = 'strict', string $modelPolicy = 'default'): static
     {
         $this->steps[] = new EditStep($this->id('edit'), $mode, $modelPolicy);
 
@@ -232,7 +235,7 @@ final class WorkflowBuilder
         array $reads = [],
         array $parameters = [],
         ?string $version = null,
-    ): self {
+    ): static {
         $this->steps[] = new LlmOperationStep(
             $this->id('operation'),
             $operation,
@@ -253,7 +256,7 @@ final class WorkflowBuilder
         int $maxRepairs = 0,
         ?string $output = null,
         ?string $repairOperationVersion = null,
-    ): self {
+    ): static {
         $this->steps[] = new QualityGateStep(
             $this->id('quality_gate'),
             $artifact,
@@ -279,7 +282,7 @@ final class WorkflowBuilder
         string $verificationOperation = 'rick.verify.grounded',
         ?string $verificationOperationVersion = null,
         ?string $repairOperationVersion = null,
-    ): self {
+    ): static {
         $this->steps[] = new GroundedVerifyStep(
             $this->id('grounded_verify'),
             $artifact,
@@ -297,7 +300,7 @@ final class WorkflowBuilder
     }
 
     /** @param non-empty-list<OperationCall>|Closure(ParallelBuilder): mixed $calls */
-    public function parallel(array|Closure $calls): self
+    public function parallel(array|Closure $calls): static
     {
         if ($calls instanceof Closure) {
             $builder = new ParallelBuilder;
@@ -320,7 +323,7 @@ final class WorkflowBuilder
         int $maxItems = 50,
         ?string $operationVersion = null,
         bool $includeSourceArtifact = false,
-    ): self {
+    ): static {
         $this->steps[] = new MapStep(
             $this->id('map'),
             $source,
@@ -337,7 +340,7 @@ final class WorkflowBuilder
     }
 
     /** @param non-empty-list<string> $inputs */
-    public function join(array $inputs, string $output, string $mode = 'concat', string $separator = "\n\n"): self
+    public function join(array $inputs, string $output, string $mode = 'concat', string $separator = "\n\n"): static
     {
         $this->steps[] = new JoinStep($this->id('join'), $inputs, $output, $mode, $separator);
 
@@ -352,7 +355,7 @@ final class WorkflowBuilder
         string $whenTrue,
         string $whenFalse,
         string $output,
-    ): self {
+    ): static {
         $this->steps[] = new BranchStep(
             $this->id('branch'),
             $conditionArtifact,
@@ -373,7 +376,7 @@ final class WorkflowBuilder
         string $prompt,
         ?array $schema = null,
         string $artifactType = 'input',
-    ): self {
+    ): static {
         $this->steps[] = new WaitForInputStep(
             $this->id('wait_for_input'),
             $key,
@@ -391,7 +394,7 @@ final class WorkflowBuilder
         ?string $prompt = null,
         ?array $schema = null,
         string $artifactType = 'approval',
-    ): self {
+    ): static {
         $this->steps[] = new AwaitHumanStep(
             $this->id('await_human'),
             $key,
@@ -403,19 +406,19 @@ final class WorkflowBuilder
         return $this;
     }
 
-    public function outputGlue(?string $artifactKey = null): self
+    public function outputGlue(?string $artifactKey = null): static
     {
         $this->steps[] = new OutputGlueStep($this->id('output_glue'), $artifactKey);
 
         return $this;
     }
 
-    public function output(?string $artifactKey = null): self
+    public function output(?string $artifactKey = null): static
     {
         return $this->outputGlue($artifactKey);
     }
 
-    public function step(string|StepBase $step, ?string $as = null, ?string $label = null): self
+    public function step(string|StepBase $step, ?string $as = null, ?string $label = null): static
     {
         if (is_string($step)) {
             if ($as === null || trim($as) === '') {
@@ -446,7 +449,7 @@ final class WorkflowBuilder
         ?string $label = null,
         string $modelPolicy = 'medium',
         ?string $prompt = null,
-    ): self {
+    ): static {
         if (trim($as) === '') {
             throw new InvalidArgumentException('An agent step requires a stable alias (as:).');
         }

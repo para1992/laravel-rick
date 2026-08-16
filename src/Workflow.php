@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Rick\Laravel;
 
-use Rick\Laravel\Application\Compilation\Support\Builder\WorkflowBuilder;
 use Rick\Laravel\Domain\Workflow\ValueObject\WorkflowDefinition;
 
 /**
