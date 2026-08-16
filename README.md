@@ -107,14 +107,19 @@ final class FlagRisk implements Agent
 Start it and drive it:
 
 ```php
+use Rick\Laravel\Rick;
+
 $run = ClaimDecisionWorkflow::start([
     'claim_id' => $claim->id,
 ]);
 
 $progress = $run->progress();
 
+// awaitHuman is an input gate: read the pending key, then submit the payload.
 if ($run->pendingInteraction()->exists()) {
-    $run->resume();
+    $rick = app(Rick::class);
+    $pending = $rick->pendingInput($run->id());
+    $rick->submitInput($run->id(), $pending->key, ['approved' => true]);
 }
 ```
 
@@ -135,8 +140,8 @@ $child = $failedRun->retry();
 - **Provider-attempt accounting** — queue redelivery never silently authorizes a
   duplicate paid provider attempt.
 - **Budgets** — token and cost limits are enforced across recovery.
-- **Transactional outbox** — domain events and queued jobs are delivered exactly
-  once, after commit.
+- **Transactional outbox** — domain events and queued jobs are delivered
+  durably after commit (at least once; workers stay idempotent).
 - **Versioned, encrypted persistence** — persisted business payloads are
   encrypted and versioned; a suspended run stays readable across deploys.
 

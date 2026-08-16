@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-08-17
+
+- Fixed the README transactional-outbox guarantee: delivery is at least once,
+  not exactly once (a worker can crash after the broker accepts a job or a
+  listener handles an event but before the row is marked delivered).
+- Fixed the README human-approval example: an `awaitHuman` input gate is
+  resolved through `pendingInput()` + `submitInput(..., ['approved' => true])`,
+  not through `resume()`, which does not carry the human payload.
+
 ## [0.4.0] - 2026-08-17
 
 Application-first / Laravel-native.
@@ -93,3 +102,4 @@ Initial release.
 [0.2.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.2.0
 [0.3.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.3.0
 [0.4.0]: https://github.com/para1992/laravel-rick/releases/tag/v0.4.0
+[0.4.1]: https://github.com/para1992/laravel-rick/releases/tag/v0.4.1
