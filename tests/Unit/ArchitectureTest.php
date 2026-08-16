@@ -430,6 +430,7 @@ final class ArchitectureTest extends TestCase
         self::assertSame([
             'compile',
             'delivery',
+            'fake',
             'metrics',
             'pendingInput',
             'pendingInteraction',

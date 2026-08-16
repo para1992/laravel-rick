@@ -22,6 +22,7 @@ use Rick\Laravel\Infrastructure\Configuration\RickConfiguration;
 use Rick\Laravel\Infrastructure\Console\DiagnoseCommand;
 use Rick\Laravel\Infrastructure\Console\InspectRunCommand;
 use Rick\Laravel\Infrastructure\Console\ListRecipesCommand;
+use Rick\Laravel\Infrastructure\Console\MakeRickWorkflowCommand;
 use Rick\Laravel\Infrastructure\Console\MigrateLegacyCommand;
 use Rick\Laravel\Infrastructure\Console\OutboxRelayCommand;
 use Rick\Laravel\Infrastructure\Console\PruneCommand;
@@ -104,6 +105,7 @@ final class RickServiceProvider extends ServiceProvider
                 DiagnoseCommand::class,
                 InspectRunCommand::class,
                 ListRecipesCommand::class,
+                MakeRickWorkflowCommand::class,
                 MigrateLegacyCommand::class,
                 OutboxRelayCommand::class,
                 PruneCommand::class,

@@ -36,6 +36,7 @@ use Rick\Laravel\Application\Execution\Result\RunWorkflowResult;
 use Rick\Laravel\Application\Execution\Result\ScheduleRunResult;
 use Rick\Laravel\Application\Execution\Result\SelectCandidateResult;
 use Rick\Laravel\Application\Execution\Result\SubmitInputResult;
+use Rick\Laravel\Application\Execution\Support\Llm\Interface\GatewayBase;
 use Rick\Laravel\Application\Interface\IdGeneratorBase;
 use Rick\Laravel\Application\Interface\RequestBase;
 use Rick\Laravel\Application\Interface\ResultBase;
@@ -59,6 +60,8 @@ use Rick\Laravel\Domain\ValueObject\Parcel;
 use Rick\Laravel\Domain\Workflow\ValueObject\CompiledWorkflow;
 use Rick\Laravel\Domain\Workflow\ValueObject\WorkflowDefinition;
 use Rick\Laravel\Infrastructure\Outbox\OutboxRelay;
+use Rick\Laravel\Testing\FakeGateway;
+use Rick\Laravel\Testing\RickFake;
 use Throwable;
 
 final readonly class Rick
@@ -255,6 +258,20 @@ final readonly class Rick
             $result->deferred,
             $result->failed,
         );
+    }
+
+    /** @param array<string, array{0: string, 1: ?array<string, mixed>}> $agents */
+    public function fake(array $agents = []): RickFake
+    {
+        $gateway = new FakeGateway;
+        $fake = new RickFake($gateway);
+        foreach ($agents as $alias => [$text, $structured]) {
+            $fake->agent($alias, $text, $structured);
+        }
+        app()->instance(GatewayBase::class, $gateway);
+        app()->forgetScopedInstances();
+
+        return $fake;
     }
 
     /**

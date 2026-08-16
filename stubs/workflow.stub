@@ -1,0 +1,21 @@
+<?php
+
+namespace {{ namespace }};
+
+use Rick\Laravel\Workflow;
+use Rick\Laravel\WorkflowBuilder;
+
+final class {{ class }} extends Workflow
+{
+    public function name(): string
+    {
+        return '{{ name }}';
+    }
+
+    public function build(WorkflowBuilder $workflow): WorkflowBuilder
+    {
+        return $workflow
+            ->awaitHuman('approval', schema: ['approved' => ['required', 'boolean']])
+            ->output('result');
+    }
+}

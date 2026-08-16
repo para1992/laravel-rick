@@ -42,6 +42,7 @@ use Rick\Laravel\Domain\Workflow\ValueObject\WorkflowDefinition;
  * @method static WorkflowRunSnapshot submitInput(RunId|string $runId, string $key, mixed $value)
  * @method static CandidateSelection selectCandidate(RunId|string $runId, CandidateId|string $candidateId)
  * @method static \Rick\Laravel\OutboxRelayReceipt relayOutbox(?int $limit = null)
+ * @method static \Rick\Laravel\Testing\RickFake fake(array<string, array{0: string, 1: ?array<string, mixed>}> $agents = [])
  *
  * @see \Rick\Laravel\Rick
  */
