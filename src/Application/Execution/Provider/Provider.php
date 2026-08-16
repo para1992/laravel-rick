@@ -14,6 +14,7 @@ use Rick\Laravel\Application\Execution\Pipe\GetPendingInputPipe;
 use Rick\Laravel\Application\Execution\Pipe\GetPendingInteractionPipe;
 use Rick\Laravel\Application\Execution\Pipe\GetPendingReviewPipe;
 use Rick\Laravel\Application\Execution\Pipe\GetRunMetricsPipe;
+use Rick\Laravel\Application\Execution\Pipe\GetRunProgressPipe;
 use Rick\Laravel\Application\Execution\Pipe\GetRunSnapshotPipe;
 use Rick\Laravel\Application\Execution\Pipe\GetRunTimelinePipe;
 use Rick\Laravel\Application\Execution\Pipe\ListRunsPipe;
@@ -66,6 +67,7 @@ final class Provider extends ProviderBase
             ResumeRunPipe::class,
             GetRunSnapshotPipe::class,
             GetRunMetricsPipe::class,
+            GetRunProgressPipe::class,
             ListRunsPipe::class,
             GetRunTimelinePipe::class,
             GetDeliverySnapshotPipe::class,

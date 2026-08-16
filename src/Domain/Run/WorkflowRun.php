@@ -22,6 +22,7 @@ use Rick\Laravel\Domain\Event\WorkflowRecoveryStarted;
 use Rick\Laravel\Domain\Exception\InvalidStateTransitionException;
 use Rick\Laravel\Domain\Run\ValueObject\CandidateId;
 use Rick\Laravel\Domain\Run\ValueObject\RunId;
+use Rick\Laravel\Domain\Workflow\Interface\LabeledStepBase;
 use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\ValueObject\CompiledWorkflow;
 use Rick\Laravel\Domain\Workflow\ValueObject\DefinitionOfDone;
@@ -538,6 +539,22 @@ final class WorkflowRun
     public function nextStep(): ?StepBase
     {
         return $this->workflow->stepAt($this->position);
+    }
+
+    public function progress(): RunProgress
+    {
+        $total = $this->workflow->count();
+        $current = $total === 0 ? 0 : min($this->position + 1, $total);
+        $step = $this->nextStep();
+        $label = $step instanceof LabeledStepBase ? $step->label() : null;
+
+        return new RunProgress(
+            $this->status,
+            $step?->id()->toString(),
+            $label,
+            $current,
+            $total,
+        );
     }
 
     public function candidate(CandidateId $id): Candidate
