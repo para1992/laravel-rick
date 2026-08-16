@@ -120,6 +120,7 @@
             "/.phpunit.cache",
             "/.serena",
             "/.vscode",
+            "/assets",
             "/benchmark-results",
             "/build",
             "/coverage",

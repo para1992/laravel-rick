@@ -1,25 +1,69 @@
+<p align="center">
+  <img src="assets/rick-hero.png" alt="Rick — durable AI workflows for Laravel" />
+</p>
+
 # Laravel Rick
 
-Durable, tenant-aware AI workflows for Laravel.
+**Durable AI workflows for Laravel.**
 
-Laravel Rick runs the durable business process around your AI calls — ordinary
-application steps, Laravel AI agents, queues, approvals, budgets, retries, and
-long waits — without repeating paid work merely because a worker crashed.
+Rick is a runtime for long-running, recoverable, cost-aware AI workflows. It
+wraps your Laravel AI agents and plain PHP steps in durable execution — with
+recovery, provider-attempt accounting, token and cost budgets, tenant
+isolation, human input gates, and a testing façade.
 
-## Why not just call Laravel AI directly?
+<p align="center">
+  <a href="https://github.com/para1992/laravel-rick/stargazers"><img src="https://img.shields.io/github/stars/para1992/laravel-rick?style=flat-square" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/para1992/laravel-rick?style=flat-square" alt="License"></a>
+  <a href="https://github.com/para1992/laravel-rick/commits/main"><img src="https://img.shields.io/github/last-commit/para1992/laravel-rick?style=flat-square" alt="Last commit"></a>
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.3+">
+  <img src="https://img.shields.io/badge/Laravel-12%20%7C%2013-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 12 | 13">
+  <a href="https://github.com/para1992/laravel-rick/releases"><img src="https://img.shields.io/badge/version-0.4.1-0ea5e9?style=flat-square" alt="Version 0.4.1"></a>
+</p>
+
+## Why Rick?
 
 A single `Agent::prompt()` call is easy. A business process is not:
 
 - a crash after the provider charged you should not charge you again on retry;
 - a human approval may arrive hours later, in a different process;
 - every tenant must see only its own runs;
-- costs and token budgets must be enforced even under redelivery.
+- token and cost budgets must hold even under queue redelivery.
 
-Rick wraps the same Laravel AI agents you already write in a persisted,
-recoverable workflow. The agent stays an agent; Rick owns the durable process
-around it.
+Rick wraps the Laravel AI agents you already write in a persisted, recoverable
+workflow. The agent stays an agent; Rick owns the durable process around it.
 
-## What normal code looks like
+## Before Rick / With Rick
+
+| Without Rick | With Rick |
+|---|---|
+| A worker crash re-pays work the provider already charged for. | Successful invocations are reused on recovery. |
+| A failed run is rewritten in place. | `retry()` creates an immutable child run with lineage. |
+| Tenant scoping and budgets are hand-rolled per feature. | Built-in tenant isolation and enforced token/cost budgets. |
+| "Did the provider charge me?" is guesswork. | Per-attempt token and cost accounting. |
+| A redelivered job can double a paid call. | Duplicate delivery never re-authorizes a paid attempt. |
+
+## Core features
+
+- **Durable execution** — runs survive process restarts; suspended runs stay readable across deploys.
+- **Recovery** — immutable recovery lineage, and reuse of already-succeeded provider work.
+- **Provider-attempt accounting** — every paid call is tracked; redelivery never double-charges.
+- **Token & cost budgets** — enforced across recovery, with a known-pricing policy.
+- **Tenant isolation** — runs, steps, and observations are tenant-scoped.
+- **Transactional outbox** — events and jobs are delivered durably after commit (at least once; workers stay idempotent).
+- **Plain PHP steps** — any invokable is a workflow step; write business logic, not engine primitives.
+- **Laravel AI agents** — `->agent(MyAgent::class)` adapts an agent into exactly one audited call.
+- **Human input gates** — `awaitHuman()` with JSON-schema validation.
+- **Testing façade** — `Rick::fake()` asserts against the real snapshot and timeline.
+
+## Design principles
+
+- **One engine.** The public API compiles into the same execution engine — no second runtime.
+- **Explicit durability.** At-least-once semantics are stated, never implied.
+- **Deterministic persistence.** Versioned JSON codecs and encrypted payloads; no PHP serialization.
+- **A small public surface.** A workflow reads like the business process, not the engine.
+- **Fail loud.** Unsupported agent capabilities are rejected, not silently downgraded.
+
+## What a workflow looks like
 
 ```php
 <?php
@@ -129,21 +173,6 @@ already succeeded:
 ```php
 $child = $failedRun->retry();
 ```
-
-## Stronger guarantees
-
-- **Immutable recovery lineage** — a failed run is never rewritten; retry
-  creates a child that points back to its parent.
-- **Reusable successful invocations** — provider work that already succeeded is
-  reused on recovery instead of being paid for again.
-- **Tenant isolation** — every run, step, and observation is tenant-scoped.
-- **Provider-attempt accounting** — queue redelivery never silently authorizes a
-  duplicate paid provider attempt.
-- **Budgets** — token and cost limits are enforced across recovery.
-- **Transactional outbox** — domain events and queued jobs are delivered
-  durably after commit (at least once; workers stay idempotent).
-- **Versioned, encrypted persistence** — persisted business payloads are
-  encrypted and versioned; a suspended run stays readable across deploys.
 
 ## Installation
 
