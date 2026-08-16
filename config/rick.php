@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Rick\Laravel\Application\Execution\Strategy\AgentStepStrategy;
+use Rick\Laravel\Application\Execution\Strategy\ApplicationStepStrategy;
 use Rick\Laravel\Application\Execution\Strategy\AwaitHumanStrategy;
 use Rick\Laravel\Application\Execution\Strategy\BranchStrategy;
 use Rick\Laravel\Application\Execution\Strategy\ContextStrategy;
@@ -77,6 +79,8 @@ return [
             'branch' => BranchStrategy::class,
             'wait_for_input' => WaitForInputStrategy::class,
             'await_human' => AwaitHumanStrategy::class,
+            'application' => ApplicationStepStrategy::class,
+            'agent' => AgentStepStrategy::class,
         ],
     ],
     'outbox' => [
