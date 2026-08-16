@@ -15,6 +15,7 @@ use Rick\Laravel\Infrastructure\Configuration\ConfigurationInput;
 use Rick\Laravel\Infrastructure\Persistence\Json\JsonInput;
 use Rick\Laravel\Rick;
 use Rick\Laravel\Tests\Support\AllLinksWorkflow;
+use Rick\Laravel\Tests\Support\ClaimDecisionWorkflow;
 use Rick\Laravel\Tests\TestCase;
 use RuntimeException;
 
@@ -37,6 +38,10 @@ final class OpenRouterPackageSmokeTest extends TestCase
     private const string DEFAULT_MAX_HUMANIZER_COST = '0.020';
 
     private const float MAX_ALLOWED_HUMANIZER_COST = 0.030;
+
+    private const string DEFAULT_MAX_CLAIM_DECISION_COST = '0.004';
+
+    private const float MAX_ALLOWED_CLAIM_DECISION_COST = 0.005;
 
     private const int MAX_PUBLIC_RESUME_ATTEMPTS = 128;
 
@@ -409,6 +414,25 @@ TEXT;
         );
     }
 
+    public function test_real_claim_decision_workflow_runs_application_steps_and_agents(): void
+    {
+        $rick = $this->application()->make(Rick::class);
+        $run = ClaimDecisionWorkflow::start(['claim_id' => 42]);
+
+        self::assertSame(
+            RunStatus::AwaitingInput,
+            $run->snapshot()->status,
+            $this->diagnostic($rick, $run->snapshot()),
+        );
+        self::assertTrue($run->snapshot()->hasArtifact('claim'));
+        self::assertTrue($run->snapshot()->hasArtifact('facts'));
+        self::assertTrue($run->snapshot()->hasArtifact('risk'));
+
+        $metrics = $rick->metrics($run->snapshot()->id);
+        $this->assertMeasuredOpenRouterCalls($metrics, 2, self::maxClaimDecisionCost());
+        self::record('claim_decision', $run->snapshot(), $metrics, self::maxClaimDecisionCost());
+    }
+
     private function assertMeasuredOpenRouterCalls(
         RunMetrics $metrics,
         int $expectedCalls,
@@ -588,5 +612,17 @@ TEXT;
             && (float) $cost <= self::MAX_ALLOWED_HUMANIZER_COST
             ? $cost
             : self::DEFAULT_MAX_HUMANIZER_COST;
+    }
+
+    private static function maxClaimDecisionCost(): string
+    {
+        $cost = getenv('RICK_LIVE_MAX_CLAIM_DECISION_COST_USD');
+
+        return is_string($cost)
+            && preg_match('/^0\\.\\d{1,6}$/', $cost) === 1
+            && (float) $cost > 0
+            && (float) $cost <= self::MAX_ALLOWED_CLAIM_DECISION_COST
+            ? $cost
+            : self::DEFAULT_MAX_CLAIM_DECISION_COST;
     }
 }
