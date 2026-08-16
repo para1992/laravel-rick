@@ -15,6 +15,8 @@ use Rick\Laravel\Application\Interface\JsonSchemaValidatorBase;
 use Rick\Laravel\Domain\Workflow\Interface\ArtifactStepBase;
 use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\Interface\TerminalStepBase;
+use Rick\Laravel\Domain\Workflow\Step\AgentStep;
+use Rick\Laravel\Domain\Workflow\Step\ApplicationStep;
 use Rick\Laravel\Domain\Workflow\Step\DefineDodStep;
 use Rick\Laravel\Domain\Workflow\Step\GenerateStep;
 use Rick\Laravel\Domain\Workflow\Step\JudgeStep;
@@ -80,8 +82,8 @@ final readonly class WorkflowStrategy implements StrategyBase
             throw new WorkflowValidationException('RAW_PROMPT must be the only workflow step.');
         }
 
-        if ($definition->steps === [] || ! $definition->steps[0] instanceof ResolveStep) {
-            throw new WorkflowValidationException('Workflow must start with RESOLVE.');
+        if ($definition->steps === []) {
+            throw new WorkflowValidationException('Workflow must contain at least one step.');
         }
 
         foreach ($definition->steps as $step) {
@@ -156,6 +158,17 @@ final readonly class WorkflowStrategy implements StrategyBase
     /** @param list<StepBase> $steps */
     private function validateArtifactGraph(array $steps): void
     {
+        foreach ($steps as $step) {
+            if ($step instanceof ApplicationStep || $step instanceof AgentStep) {
+                // Application-first workflows own a runtime-dynamic artifact
+                // graph (a step or agent can read/write any key through
+                // WorkflowState). Static read-before-write validation applies
+                // only to workflows built from compile-time-declared LLM
+                // primitives.
+                return;
+            }
+        }
+
         /** @var array<string, true> $available */
         $available = [];
         $pendingCandidateOutput = null;
