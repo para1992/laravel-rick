@@ -80,7 +80,7 @@ OUTPUT;
 
         $elements = $inventory->discover();
         self::assertCount(17, array_filter($elements, static fn ($element): bool => $element->category === 'public_api'));
-        self::assertCount(17, array_filter($elements, static fn ($element): bool => $element->category === 'strategy'));
+        self::assertCount(18, array_filter($elements, static fn ($element): bool => $element->category === 'strategy'));
         self::assertCount(17, array_filter($elements, static fn ($element): bool => $element->category === 'use_case'));
         self::assertCount(8, array_filter($elements, static fn ($element): bool => $element->category === 'response_contract'));
         self::assertCount(3, array_filter($elements, static fn ($element): bool => $element->category === 'provider_outcome'));

@@ -40,7 +40,7 @@ final class PersistenceAndExtensionsTest extends TestCase
             self::assertContains($command, $commands);
         }
         $config = $this->application()->make('config')->get('rick');
-        self::assertCount(17, $config['execution']['strategies']);
+        self::assertCount(18, $config['execution']['strategies']);
         self::assertSame([
             'rick.humanizer.draft',
             'rick.humanizer.audit',
