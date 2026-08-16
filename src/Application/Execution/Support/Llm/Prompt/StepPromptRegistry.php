@@ -12,6 +12,7 @@ final class StepPromptRegistry
     public const PROFILE_IDS = [
         'rick.step.define_dod',
         'rick.step.generate',
+        'rick.step.judge',
         'rick.step.unfold.units',
         'rick.step.unfold.candidate',
         'rick.step.edit',

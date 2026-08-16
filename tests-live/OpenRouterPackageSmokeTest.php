@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rick\Laravel\LiveTests;
 
 use Illuminate\Database\ConnectionInterface;
+use Rick\Laravel\Application\Compilation\Support\Recipe\RecipeRegistry;
 use Rick\Laravel\Domain\Event\StepFailed;
 use Rick\Laravel\Domain\Metrics\ValueObject\InvocationCost;
 use Rick\Laravel\Domain\Metrics\ValueObject\RunMetrics;
@@ -32,6 +33,10 @@ final class OpenRouterPackageSmokeTest extends TestCase
     private const string DEFAULT_MAX_MULTICANDIDATE_COST = '0.004';
 
     private const float MAX_ALLOWED_MULTICANDIDATE_COST = 0.005;
+
+    private const string DEFAULT_MAX_HUMANIZER_COST = '0.020';
+
+    private const float MAX_ALLOWED_HUMANIZER_COST = 0.030;
 
     private const int MAX_PUBLIC_RESUME_ATTEMPTS = 128;
 
@@ -330,6 +335,39 @@ final class OpenRouterPackageSmokeTest extends TestCase
         );
     }
 
+    public function test_real_humanizer_recipe_rewrites_and_grounds_an_ai_styled_text(): void
+    {
+        $source = <<<'TEXT'
+Established in 2024, the Northstar Lab stands as a vibrant testament to our
+enduring commitment to innovation. Located in Warsaw, the lab serves as a
+pivotal hub, fostering collaboration, showcasing groundbreaking ideas, and
+shaping the evolving technology landscape. It has 17 researchers and uses the
+internal codename ORBIT-17. Despite the challenges of a rapidly changing
+world, the future looks bright. It is not just a lab; it is a movement.
+TEXT;
+        $rick = $this->application()->make(Rick::class);
+        $workflow = $this->application()->make(RecipeRegistry::class)->build('rick.humanizer');
+
+        $run = $rick->run($workflow, ['source' => $source], callLimit: 6);
+        $metrics = $rick->metrics($run->id);
+
+        self::assertSame(RunStatus::Completed, $run->status, $this->diagnostic($rick, $run));
+        self::assertGreaterThanOrEqual(4, $run->callsUsed);
+        self::assertLessThanOrEqual(6, $run->callsUsed);
+        self::assertNotSame(trim($source), trim($run->output()));
+        foreach (['2024', 'Warsaw', '17', 'ORBIT-17'] as $fact) {
+            self::assertStringContainsString($fact, $run->output());
+        }
+        self::assertTrue($run->artifact('humanizer.verified.verification')->payload['passed']);
+        self::assertTrue($run->artifact('humanizer.output.quality')->payload['passed']);
+        $this->assertMeasuredOpenRouterCalls(
+            $metrics,
+            $run->callsUsed,
+            self::maxHumanizerCost(),
+        );
+        self::record('humanizer', $run, $metrics, self::maxHumanizerCost());
+    }
+
     public static function tearDownAfterClass(): void
     {
         parent::tearDownAfterClass();
@@ -538,5 +576,17 @@ final class OpenRouterPackageSmokeTest extends TestCase
             && (float) $cost <= self::MAX_ALLOWED_MULTICANDIDATE_COST
             ? $cost
             : self::DEFAULT_MAX_MULTICANDIDATE_COST;
+    }
+
+    private static function maxHumanizerCost(): string
+    {
+        $cost = getenv('RICK_LIVE_MAX_HUMANIZER_COST_USD');
+
+        return is_string($cost)
+            && preg_match('/^0\\.\\d{1,6}$/', $cost) === 1
+            && (float) $cost > 0
+            && (float) $cost <= self::MAX_ALLOWED_HUMANIZER_COST
+            ? $cost
+            : self::DEFAULT_MAX_HUMANIZER_COST;
     }
 }

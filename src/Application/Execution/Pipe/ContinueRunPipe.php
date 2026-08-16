@@ -252,16 +252,24 @@ final readonly class ContinueRunPipe implements PipeBase
             return new ContinueRunResult(ContinueRunStatus::Terminal, $run->snapshot());
         }
 
+        try {
+            $batch = $this->invocations->create(
+                $run->id(),
+                $step->id(),
+                $plan->requests,
+                $plan->completionPolicy,
+            );
+        } catch (StepFailureBase $error) {
+            $run->failStep($step->id(), $error->errorCode(), $error->getMessage());
+            $this->runs->save($run, $runVersion);
+            $this->events->record($run);
+
+            return new ContinueRunResult(ContinueRunStatus::Terminal, $run->snapshot());
+        }
         $run->reserveCalls(array_map(
             static fn ($request): string => $request->purpose,
             $plan->requests,
         ));
-        $batch = $this->invocations->create(
-            $run->id(),
-            $step->id(),
-            $plan->requests,
-            $plan->completionPolicy,
-        );
         $initialDispatch = $this->dispatch->next($batch->execution, $batch->invocations);
         $this->executions->add($batch->execution, $batch->invocations);
         $this->runs->save($run, $runVersion);

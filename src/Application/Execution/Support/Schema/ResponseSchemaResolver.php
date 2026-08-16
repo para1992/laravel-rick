@@ -67,7 +67,7 @@ final readonly class ResponseSchemaResolver
             ]),
             ResponseContract::Judge => StrictSchema::object([
                 'selected_candidate_id' => ['type' => 'string'],
-                'score' => ['type' => 'number'],
+                'score' => ['type' => 'number', 'minimum' => 0, 'maximum' => 100],
                 'reason' => ['type' => 'string'],
             ]),
             ResponseContract::UnfoldUnits => StrictSchema::object([

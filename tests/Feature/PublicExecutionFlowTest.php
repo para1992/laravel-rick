@@ -343,6 +343,59 @@ final class PublicExecutionFlowTest extends TestCase
         );
     }
 
+    public function test_automatic_judge_selects_and_persists_the_best_candidate(): void
+    {
+        $gateway = (new FakeGateway)->respondUsing(
+            static function (CompletionRequest $request): CompletionResponse {
+                if ($request->responseContract === ResponseContract::Candidate) {
+                    $number = JsonInput::integer(
+                        $request->metadata['candidate_index'] ?? null,
+                        'request.metadata.candidate_index',
+                    ) + 1;
+
+                    return new CompletionResponse(structured: ['content' => 'Draft '.$number]);
+                }
+
+                $prompt = $request->messages[1]->content;
+                preg_match_all('/"candidate_id":"([^"]+)"/', $prompt, $matches);
+                $candidateIds = $matches[1];
+                $selected = $candidateIds[1] ?? throw new RuntimeException('Judge prompt has no second candidate.');
+
+                return new CompletionResponse(structured: [
+                    'selected_candidate_id' => $selected,
+                    'score' => 94,
+                    'reason' => 'The second draft satisfies the definition of done best.',
+                ]);
+            },
+        );
+        $this->application()->instance(GatewayBase::class, $gateway);
+        $rick = $this->application()->make(Rick::class);
+        $workflow = $rick->workflow('automatic-judge')
+            ->resolve('Write a draft', 'The strongest draft is selected')
+            ->draft(candidates: 2)
+            ->judge()
+            ->outputGlue('draft')
+            ->build();
+
+        $run = $rick->run($workflow);
+
+        self::assertSame(RunStatus::Completed, $run->status);
+        self::assertSame('Draft 2', $run->output());
+        self::assertSame(3, $run->callsUsed);
+        self::assertCount(1, $run->acceptedCandidates);
+        self::assertCount(1, $run->decisions);
+        self::assertSame(94.0, $run->decisions[0]->score);
+        self::assertSame('llm_judge', $run->decisions[0]->policy);
+        self::assertSame(
+            $run->acceptedCandidates[0]->id->toString(),
+            $run->decisions[0]->selectedCandidateId->toString(),
+        );
+        $gateway->assertRequested(
+            static fn (CompletionRequest $request): bool => $request->purpose === 'judge_candidate',
+            times: 1,
+        );
+    }
+
     public function test_quality_rule_set_produces_a_persisted_report(): void
     {
         $rick = $this->application()->make(Rick::class);
@@ -1392,6 +1445,9 @@ final class PublicExecutionFlowTest extends TestCase
             ], JSON_THROW_ON_ERROR),
         );
         $rick->submitInput($waitingForInput->id, 'approval', ['approved' => true]);
+        $this->drivePublicRun($rick, $waitingForInput->id);
+
+        $rick->submitInput($waitingForInput->id, 'human_approval', ['approved' => true]);
         $this->drivePublicRun($rick, $waitingForInput->id);
 
         $review = $rick->pendingReview($waitingForInput->id);

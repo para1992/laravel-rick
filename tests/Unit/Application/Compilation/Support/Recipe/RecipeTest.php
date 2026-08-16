@@ -8,11 +8,17 @@ use InvalidArgumentException;
 use OutOfBoundsException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Rick\Laravel\Application\Compilation\Support\Recipe\HumanizerRecipe;
 use Rick\Laravel\Application\Compilation\Support\Recipe\LongFormRecipe;
 use Rick\Laravel\Application\Compilation\Support\Recipe\MultiPerspectiveAnalysisRecipe;
 use Rick\Laravel\Application\Compilation\Support\Recipe\RecipeConfiguration;
 use Rick\Laravel\Application\Compilation\Support\Recipe\RecipeRegistry;
 use Rick\Laravel\Application\Compilation\Support\Recipe\RefactoringPlanRecipe;
+use Rick\Laravel\Domain\Workflow\Step\ContextStep;
+use Rick\Laravel\Domain\Workflow\Step\GroundedVerifyStep;
+use Rick\Laravel\Domain\Workflow\Step\LlmOperationStep;
+use Rick\Laravel\Domain\Workflow\Step\OutputGlueStep;
+use Rick\Laravel\Domain\Workflow\Step\QualityGateStep;
 use Rick\Laravel\Domain\Workflow\Step\WaitForInputStep;
 
 final class RecipeTest extends TestCase
@@ -54,17 +60,42 @@ final class RecipeTest extends TestCase
     public function test_registry_builds_every_builtin_recipe_and_sorts_ids(): void
     {
         $longForm = new LongFormRecipe;
+        $humanizer = new HumanizerRecipe;
         $multiPerspective = new MultiPerspectiveAnalysisRecipe;
         $refactoring = new RefactoringPlanRecipe;
-        $registry = new RecipeRegistry([$refactoring, $longForm]);
+        $registry = new RecipeRegistry([$refactoring, $longForm, $humanizer]);
         $registry->register($multiPerspective);
 
         self::assertSame([
+            'rick.humanizer',
             'rick.long_form',
             'rick.multi_perspective',
             'rick.refactoring_plan',
         ], $registry->ids());
         self::assertSame($longForm, $registry->get('rick.long_form'));
+
+        self::assertSame('1.0.0', $humanizer->version());
+        self::assertNotSame('', $humanizer->description());
+        $humanizerDefinition = $registry->build('rick.humanizer', [
+            'source_key' => 'article',
+            'use_voice_sample' => true,
+            'voice_sample_key' => 'author_sample',
+        ]);
+        self::assertSame('rick-humanizer', $humanizerDefinition->name);
+        self::assertSame([
+            ContextStep::class,
+            ContextStep::class,
+            LlmOperationStep::class,
+            LlmOperationStep::class,
+            LlmOperationStep::class,
+            LlmOperationStep::class,
+            GroundedVerifyStep::class,
+            QualityGateStep::class,
+            OutputGlueStep::class,
+        ], array_map(
+            static fn (object $step): string => $step::class,
+            array_slice($humanizerDefinition->steps, 1),
+        ));
 
         self::assertSame('1.0.0', $longForm->version());
         self::assertNotSame('', $longForm->description());

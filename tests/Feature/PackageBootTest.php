@@ -39,6 +39,7 @@ final class PackageBootTest extends TestCase
             'join',
             'branch',
             'wait_for_input',
+            'await_human',
         ];
 
         foreach ($types as $type) {
@@ -51,6 +52,7 @@ final class PackageBootTest extends TestCase
     public function test_operational_commands_are_registered(): void
     {
         $this->artisanCommand('rick:recipes')
+            ->expectsOutput('rick.humanizer')
             ->expectsOutput('rick.long_form')
             ->expectsOutput('rick.multi_perspective')
             ->expectsOutput('rick.refactoring_plan')

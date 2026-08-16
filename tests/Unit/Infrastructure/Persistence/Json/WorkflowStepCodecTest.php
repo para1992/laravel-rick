@@ -6,6 +6,7 @@ namespace Rick\Laravel\Tests\Unit\Infrastructure\Persistence\Json;
 
 use PHPUnit\Framework\TestCase;
 use Rick\Laravel\Application\Compilation\Interface\StepCodecBase;
+use Rick\Laravel\Domain\Workflow\Step\JudgeStep;
 use Rick\Laravel\Domain\Workflow\Step\RawPromptStep;
 use Rick\Laravel\Domain\Workflow\Step\ResolveStep;
 use Rick\Laravel\Domain\Workflow\Step\WaitForInputStep;
@@ -35,6 +36,24 @@ final class WorkflowStepCodecTest extends TestCase
             'model_policy_id' => 'quality',
         ], $encoded);
         self::assertEquals($step, $codec->decode($encoded));
+    }
+
+    public function test_judge_modes_round_trip_and_legacy_payload_defaults_to_manual(): void
+    {
+        $codec = new WorkflowStepCodec;
+        $automatic = new JudgeStep(StepId::fromString('judge'), true, 'quality');
+
+        self::assertEquals($automatic, $codec->decode($codec->encode($automatic)));
+
+        $legacy = $codec->decode([
+            'schema_version' => 1,
+            'id' => 'legacy-judge',
+            'type' => 'judge',
+        ]);
+
+        self::assertInstanceOf(JudgeStep::class, $legacy);
+        self::assertFalse($legacy->automatic);
+        self::assertSame('quality', $legacy->modelPolicyId);
     }
 
     public function test_decode_rejects_future_schema_and_empty_required_collections(): void

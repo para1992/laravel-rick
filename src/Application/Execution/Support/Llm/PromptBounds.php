@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rick\Laravel\Application\Execution\Support\Llm;
 
 use InvalidArgumentException;
+use Rick\Laravel\Application\Execution\Exception\PromptLimitExceededException;
 use Rick\Laravel\Domain\Llm\ValueObject\CompletionRequest;
 use Rick\Laravel\Domain\Llm\ValueObject\Message;
 
@@ -34,7 +35,9 @@ final readonly class PromptBounds
             $request->messages,
         ));
         if ($system >= $this->maxCharacters) {
-            throw new InvalidArgumentException('System prompts exceed the configured prompt character limit.');
+            throw new PromptLimitExceededException(
+                'System prompts exceed the configured prompt character limit.',
+            );
         }
 
         $remaining = $this->maxCharacters - $system;
@@ -149,7 +152,7 @@ final readonly class PromptBounds
         );
         $bounded = $prefix."\n\n".$json;
         if (mb_strlen($bounded) > $limit) {
-            throw new InvalidArgumentException(
+            throw new PromptLimitExceededException(
                 'Structured prompt exceeds the configured character limit after duplicate compaction.',
             );
         }

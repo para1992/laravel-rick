@@ -7,6 +7,7 @@ namespace Rick\Laravel\Infrastructure\Persistence\Json;
 use Rick\Laravel\Application\Compilation\Interface\StepCodecBase;
 use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\OperationCall;
+use Rick\Laravel\Domain\Workflow\Step\AwaitHumanStep;
 use Rick\Laravel\Domain\Workflow\Step\BranchStep;
 use Rick\Laravel\Domain\Workflow\Step\ContextStep;
 use Rick\Laravel\Domain\Workflow\Step\DefineDodStep;
@@ -82,7 +83,10 @@ final readonly class WorkflowStepCodec
                 'model_policy_id' => $step->modelPolicyId,
                 'minimum_successful' => $step->minimumSuccessful,
             ],
-            $step instanceof JudgeStep => [],
+            $step instanceof JudgeStep => [
+                'automatic' => $step->automatic,
+                'model_policy_id' => $step->modelPolicyId,
+            ],
             $step instanceof EditStep => ['mode' => $step->mode, 'model_policy_id' => $step->modelPolicyId],
             $step instanceof OutputGlueStep => ['artifact_key' => $step->artifactKey],
             $step instanceof UnfoldStep => [
@@ -154,6 +158,12 @@ final readonly class WorkflowStepCodec
                 'artifact_type' => $step->artifactType->toString(),
                 'schema' => $step->schema,
             ],
+            $step instanceof AwaitHumanStep => [
+                'input_key' => $step->inputKey,
+                'prompt' => $step->prompt,
+                'artifact_type' => $step->artifactType->toString(),
+                'schema' => $step->schema,
+            ],
             default => $this->encodeCustom($step),
         };
     }
@@ -198,7 +208,15 @@ final readonly class WorkflowStepCodec
                     'workflow step.minimum_successful',
                 ),
             ),
-            'judge' => new JudgeStep($id),
+            'judge' => new JudgeStep(
+                $id,
+                array_key_exists('automatic', $data)
+                    ? JsonInput::boolean($data['automatic'], 'workflow step.automatic')
+                    : false,
+                array_key_exists('model_policy_id', $data)
+                    ? JsonInput::string($data['model_policy_id'], 'workflow step.model_policy_id')
+                    : 'quality',
+            ),
             'edit' => new EditStep(
                 $id,
                 JsonInput::string($data['mode'] ?? null, 'workflow step.mode'),
@@ -280,6 +298,15 @@ final readonly class WorkflowStepCodec
                 JsonInput::string($data['output_key'] ?? null, 'workflow step.output_key'),
             ),
             'wait_for_input' => new WaitForInputStep(
+                $id,
+                JsonInput::string($data['input_key'] ?? null, 'workflow step.input_key'),
+                JsonInput::string($data['prompt'] ?? null, 'workflow step.prompt'),
+                ArtifactType::fromString(JsonInput::string($data['artifact_type'] ?? null, 'workflow step.artifact_type')),
+                ($data['schema'] ?? null) === null
+                    ? null
+                    : JsonInput::map($data['schema'], 'workflow step.schema'),
+            ),
+            'await_human' => new AwaitHumanStep(
                 $id,
                 JsonInput::string($data['input_key'] ?? null, 'workflow step.input_key'),
                 JsonInput::string($data['prompt'] ?? null, 'workflow step.prompt'),

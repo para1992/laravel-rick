@@ -11,6 +11,7 @@ use Rick\Laravel\Application\Interface\JsonSchemaValidatorBase;
 use Rick\Laravel\Domain\Llm\ValueObject\CompletionMetrics;
 use Rick\Laravel\Domain\Llm\ValueObject\CompletionRequest;
 use Rick\Laravel\Domain\Llm\ValueObject\CompletionResponse;
+use Rick\Laravel\Domain\Llm\ValueObject\ResponseContract;
 use Rick\Laravel\Domain\Metrics\ValueObject\InvocationCost;
 use Rick\Laravel\Domain\Metrics\ValueObject\TokenUsage;
 use Rick\Laravel\Domain\Run\RunObservation;
@@ -19,10 +20,127 @@ use Rick\Laravel\Infrastructure\Configuration\RickConfiguration;
 use Rick\Laravel\Infrastructure\Llm\ModelRouter;
 use Rick\Laravel\Infrastructure\Persistence\Json\JsonInput;
 use Rick\Laravel\Rick;
+use Rick\Laravel\Testing\FakeGateway;
 use Rick\Laravel\Tests\TestCase;
 
 final class StructuredResponseRecoveryTest extends TestCase
 {
+    public function test_automatic_judge_retries_an_unknown_candidate_id_against_request_schema(): void
+    {
+        config(['rick.llm.structured_responses.attempts' => 2]);
+        $this->reloadConfiguration();
+        $gateway = new class implements GatewayBase
+        {
+            public int $calls = 0;
+
+            public function complete(CompletionRequest $request): CompletionResponse
+            {
+                $this->calls++;
+                if ($request->responseContract === ResponseContract::Candidate) {
+                    return new CompletionResponse(structured: ['content' => 'Draft '.$this->calls]);
+                }
+
+                preg_match_all('/"candidate_id":"([^"]+)"/', $request->messages[1]->content, $matches);
+                $candidateIds = $matches[1];
+                $selected = $candidateIds[1] ?? throw new \RuntimeException(
+                    'Judge prompt has no second candidate.',
+                );
+
+                return new CompletionResponse(structured: [
+                    'selected_candidate_id' => $this->calls === 3 ? 'unknown-candidate' : $selected,
+                    'score' => 91,
+                    'reason' => 'The second draft best meets the definition of done.',
+                ]);
+            }
+        };
+        $this->application()->instance(GatewayBase::class, $gateway);
+        $rick = $this->application()->make(Rick::class);
+        $run = $rick->run($rick->workflow('judge-schema-retry')
+            ->resolve('Write a draft', 'The strongest complete draft is selected')
+            ->draft(candidates: 2)
+            ->judge()
+            ->outputGlue('draft')
+            ->build());
+
+        self::assertSame(RunStatus::Completed, $run->status);
+        self::assertSame('Draft 2', $run->output());
+        self::assertSame(4, $gateway->calls);
+        self::assertSame(4, $run->callsUsed);
+        self::assertSame(4, $rick->metrics($run->id)->totals->attempts);
+    }
+
+    public function test_automatic_judge_retries_a_whitespace_only_reason(): void
+    {
+        config(['rick.llm.structured_responses.attempts' => 2]);
+        $this->reloadConfiguration();
+        $judgeCalls = 0;
+        $gateway = (new FakeGateway)->respondUsing(
+            static function (CompletionRequest $request) use (&$judgeCalls): CompletionResponse {
+                if ($request->responseContract === ResponseContract::Candidate) {
+                    return new CompletionResponse(structured: ['content' => 'Only draft']);
+                }
+
+                $judgeCalls++;
+                preg_match('/"candidate_id":"([^"]+)"/', $request->messages[1]->content, $matches);
+                $selected = $matches[1] ?? throw new \RuntimeException(
+                    'Judge prompt has no candidate.',
+                );
+
+                return new CompletionResponse(structured: [
+                    'selected_candidate_id' => $selected,
+                    'score' => 88,
+                    'reason' => $judgeCalls === 1 ? ' ' : 'The draft satisfies the definition of done.',
+                ]);
+            },
+        );
+        $this->application()->instance(GatewayBase::class, $gateway);
+        $rick = $this->application()->make(Rick::class);
+        $run = $rick->run($rick->workflow('judge-reason-retry')
+            ->resolve('Write a draft', 'A complete draft is selected')
+            ->draft(candidates: 1)
+            ->judge()
+            ->outputGlue('draft')
+            ->build());
+
+        self::assertSame(RunStatus::Completed, $run->status);
+        self::assertSame('Only draft', $run->output());
+        self::assertSame(2, $judgeCalls);
+        self::assertSame(3, $run->callsUsed);
+    }
+
+    public function test_oversized_automatic_judge_prompt_fails_the_run_terminally(): void
+    {
+        config(['rick.llm.max_prompt_characters' => 1_000]);
+        $this->reloadConfiguration();
+        $gateway = new class implements GatewayBase
+        {
+            public int $calls = 0;
+
+            public function complete(CompletionRequest $request): CompletionResponse
+            {
+                $this->calls++;
+                if ($request->responseContract !== ResponseContract::Candidate) {
+                    throw new \RuntimeException('Oversized judge prompt reached the gateway.');
+                }
+
+                return new CompletionResponse(structured: [
+                    'content' => 'Draft '.$this->calls.' '.str_repeat('x', 900),
+                ]);
+            }
+        };
+        $this->application()->instance(GatewayBase::class, $gateway);
+        $rick = $this->application()->make(Rick::class);
+        $run = $rick->run($rick->workflow('judge-prompt-limit')
+            ->resolve('Write a draft', 'The strongest complete draft is selected')
+            ->draft(candidates: 2)
+            ->judge()
+            ->build());
+
+        self::assertSame(RunStatus::Failed, $run->status);
+        self::assertSame(2, $gateway->calls);
+        self::assertSame(2, $run->callsUsed);
+    }
+
     public function test_explicit_structured_retry_persists_both_paid_attempts(): void
     {
         config(['rick.llm.structured_responses.attempts' => 2]);

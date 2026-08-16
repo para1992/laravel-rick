@@ -46,10 +46,10 @@
         {"id":"extensions-tooling","lane":"fast","covers":[
             "capability.recipes.built_in","capability.tooling.console","capability.validation.configuration","capability.validation.published_configuration",
             "command.rick:diagnose","command.rick:invocation:resolve","command.rick:migrate-legacy","command.rick:outbox:relay","command.rick:outbox:retry","command.rick:prune","command.rick:recipes","command.rick:recover","command.rick:run","command.rick:run:recover",
-            "operation.rick.repair.text","operation.rick.text","operation.rick.verify.grounded",
-            "prompt.rick.step.define_dod","prompt.rick.step.edit","prompt.rick.step.generate","prompt.rick.step.map","prompt.rick.step.parallel","prompt.rick.step.unfold.candidate","prompt.rick.step.unfold.units",
+            "operation.rick.humanizer.audit","operation.rick.humanizer.draft","operation.rick.humanizer.grounding_repair","operation.rick.humanizer.revise","operation.rick.humanizer.taste_audit","operation.rick.repair.text","operation.rick.text","operation.rick.verify.grounded",
+        "prompt.rick.step.define_dod","prompt.rick.step.edit","prompt.rick.step.generate","prompt.rick.step.judge","prompt.rick.step.map","prompt.rick.step.parallel","prompt.rick.step.unfold.candidate","prompt.rick.step.unfold.units",
             "quality_policy.BoundedRepairPolicy","quality_policy.FailRepairPolicy","quality_rule.minimum_characters","quality_rule_set.non_empty",
-            "recipe.rick.long_form","recipe.rick.multi_perspective","recipe.rick.refactoring_plan"
+            "recipe.rick.humanizer","recipe.rick.long_form","recipe.rick.multi_perspective","recipe.rick.refactoring_plan"
         ],"fixtures":[],"test":"Rick\\Stand\\Tests\\Feature\\PersistenceAndExtensionsTest::test_recipes_operations_quality_and_commands_are_registered"},
         {"id":"platform-contract","lane":"fast","covers":[
             "capability.queue.database","capability.queue.redis","capability.queue.sqs","platform.database.mariadb-11.4","platform.database.mysql-8.4","platform.database.postgresql-17","platform.database.sqlite","platform.laravel-ai.0.10","platform.laravel-ai.0.9","platform.laravel.12","platform.laravel.13","platform.php.8.3","platform.php.8.4","platform.php.8.5","platform.queue.database","platform.queue.localstack-sqs","platform.queue.redis-7.4"

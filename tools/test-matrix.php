@@ -88,7 +88,7 @@ function copyTree(string $source, string $target): void
 {
     $excluded = [
         '.composer-cache', '.git', '.local-ci', '.local.qa', '.pest.cache', '.phpstan.cache',
-        '.phpunit.cache', 'build', 'graphify-out', 'vendor',
+        '.phpunit.cache', 'build', 'vendor',
     ];
     mkdir($target, 0777, true);
     $iterator = new RecursiveIteratorIterator(

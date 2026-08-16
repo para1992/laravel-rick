@@ -386,6 +386,7 @@ final class ArchitectureTest extends TestCase
             'join',
             'branch',
             'wait_for_input',
+            'await_human',
         ], array_keys($strategies));
     }
 

@@ -9,6 +9,7 @@ use Rick\Laravel\Domain\Metrics\ValueObject\InvocationCost;
 use Rick\Laravel\Domain\Run\ValueObject\ResourceBudget;
 use Rick\Laravel\Domain\Workflow\Interface\StepBase;
 use Rick\Laravel\Domain\Workflow\OperationCall;
+use Rick\Laravel\Domain\Workflow\Step\AwaitHumanStep;
 use Rick\Laravel\Domain\Workflow\Step\BranchStep;
 use Rick\Laravel\Domain\Workflow\Step\ContextStep;
 use Rick\Laravel\Domain\Workflow\Step\EditStep;
@@ -204,6 +205,13 @@ final class WorkflowBuilder
         return $this;
     }
 
+    public function judge(string $modelPolicy = 'quality'): self
+    {
+        $this->steps[] = new JudgeStep($this->id('judge'), true, $modelPolicy);
+
+        return $this;
+    }
+
     public function edit(string $mode = 'strict', string $modelPolicy = 'default'): self
     {
         $this->steps[] = new EditStep($this->id('edit'), $mode, $modelPolicy);
@@ -365,6 +373,24 @@ final class WorkflowBuilder
     ): self {
         $this->steps[] = new WaitForInputStep(
             $this->id('wait_for_input'),
+            $key,
+            $prompt,
+            ArtifactType::fromString($artifactType),
+            $schema,
+        );
+
+        return $this;
+    }
+
+    /** @param array<string, mixed>|null $schema */
+    public function awaitHuman(
+        string $key,
+        string $prompt,
+        ?array $schema = null,
+        string $artifactType = 'approval',
+    ): self {
+        $this->steps[] = new AwaitHumanStep(
+            $this->id('await_human'),
             $key,
             $prompt,
             ArtifactType::fromString($artifactType),

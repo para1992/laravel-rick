@@ -36,7 +36,7 @@ final readonly class ExecutionConfiguration
         $expected = [
             'resolve', 'raw_prompt', 'define_dod', 'context', 'generate', 'unfold', 'judge',
             'edit', 'output_glue', 'operation', 'quality_gate', 'grounded_verify', 'parallel',
-            'map', 'join', 'branch', 'wait_for_input',
+            'map', 'join', 'branch', 'wait_for_input', 'await_human',
         ];
         ConfigurationInput::keys($configured, $expected, 'execution.strategies');
         if (array_keys($configured) !== $expected) {

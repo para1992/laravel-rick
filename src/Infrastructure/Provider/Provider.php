@@ -13,6 +13,7 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use Rick\Laravel\Application\Compilation\Interface\StepCodecBase;
+use Rick\Laravel\Application\Compilation\Support\Recipe\HumanizerRecipe;
 use Rick\Laravel\Application\Compilation\Support\Recipe\LongFormRecipe;
 use Rick\Laravel\Application\Compilation\Support\Recipe\MultiPerspectiveAnalysisRecipe;
 use Rick\Laravel\Application\Compilation\Support\Recipe\RecipeRegistry;
@@ -103,6 +104,7 @@ final class Provider extends ServiceProvider
         $this->app->singleton(
             RecipeRegistry::class,
             static fn (): RecipeRegistry => new RecipeRegistry([
+                new HumanizerRecipe,
                 new LongFormRecipe,
                 new MultiPerspectiveAnalysisRecipe,
                 new RefactoringPlanRecipe,

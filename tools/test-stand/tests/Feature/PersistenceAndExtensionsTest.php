@@ -29,14 +29,28 @@ final class PersistenceAndExtensionsTest extends TestCase
     public function test_recipes_operations_quality_and_commands_are_registered(): void
     {
         $recipes = $this->application()->make(RecipeRegistry::class);
-        self::assertSame(['rick.long_form', 'rick.multi_perspective', 'rick.refactoring_plan'], $recipes->ids());
+        self::assertSame([
+            'rick.humanizer',
+            'rick.long_form',
+            'rick.multi_perspective',
+            'rick.refactoring_plan',
+        ], $recipes->ids());
         $commands = array_keys(Artisan::all());
         foreach (['rick:diagnose', 'rick:run', 'rick:recipes', 'rick:recover', 'rick:outbox:relay'] as $command) {
             self::assertContains($command, $commands);
         }
         $config = $this->application()->make('config')->get('rick');
         self::assertCount(17, $config['execution']['strategies']);
-        self::assertSame(['rick.text', 'rick.repair.text', 'rick.verify.grounded'], array_keys($config['llm']['operations']));
+        self::assertSame([
+            'rick.humanizer.draft',
+            'rick.humanizer.audit',
+            'rick.humanizer.taste_audit',
+            'rick.humanizer.revise',
+            'rick.humanizer.grounding_repair',
+            'rick.text',
+            'rick.repair.text',
+            'rick.verify.grounded',
+        ], array_keys($config['llm']['operations']));
         self::assertArrayHasKey('non_empty', $config['quality']['rule_sets']);
     }
 }

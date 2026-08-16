@@ -76,6 +76,23 @@ final class WorkflowBuilderTest extends TestCase
         self::assertSame('005_generate', $steps[4]->id()->toString());
     }
 
+    public function test_automatic_and_manual_judge_helpers_preserve_their_modes(): void
+    {
+        $steps = WorkflowBuilder::named('judge-modes')
+            ->draft(2)
+            ->judge('quality')
+            ->plan(2)
+            ->manualJudge()
+            ->build()
+            ->steps;
+
+        self::assertInstanceOf(JudgeStep::class, $steps[1]);
+        self::assertTrue($steps[1]->automatic);
+        self::assertSame('quality', $steps[1]->modelPolicyId);
+        self::assertInstanceOf(JudgeStep::class, $steps[3]);
+        self::assertFalse($steps[3]->automatic);
+    }
+
     public function test_unfold_manual_judge_helpers_enable_per_unit_review(): void
     {
         $steps = WorkflowBuilder::named('unfold')

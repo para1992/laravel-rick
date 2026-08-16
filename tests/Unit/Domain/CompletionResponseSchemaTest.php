@@ -47,7 +47,7 @@ final class CompletionResponseSchemaTest extends TestCase
             ]),
             ResponseContract::Judge->value => $object([
                 'selected_candidate_id' => ['type' => 'string'],
-                'score' => ['type' => 'number'],
+                'score' => ['type' => 'number', 'minimum' => 0, 'maximum' => 100],
                 'reason' => ['type' => 'string'],
             ]),
             ResponseContract::UnfoldUnits->value => $object([

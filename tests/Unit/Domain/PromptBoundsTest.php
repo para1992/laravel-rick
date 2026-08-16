@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Rick\Laravel\Tests\Unit\Domain;
 
 use PHPUnit\Framework\TestCase;
+use Rick\Laravel\Application\Execution\Exception\PromptLimitExceededException;
 use Rick\Laravel\Application\Execution\Support\Llm\PromptBounds;
 use Rick\Laravel\Domain\Llm\ValueObject\CompletionRequest;
 use Rick\Laravel\Domain\Llm\ValueObject\Message;
@@ -123,5 +124,32 @@ final class PromptBoundsTest extends TestCase
             static fn (Message $message): int => mb_strlen($message->content),
             $bounded->messages,
         )));
+    }
+
+    public function test_prompt_bounds_reject_oversized_judge_payload_without_cutting_candidate_json(): void
+    {
+        $payload = json_encode([
+            'task' => 'Select the strongest draft.',
+            'definition_of_done' => 'The complete draft is selected.',
+            'candidates' => [
+                ['candidate_id' => 'candidate-a', 'content' => str_repeat('a', 900)],
+                ['candidate_id' => 'candidate-b', 'content' => str_repeat('b', 900)],
+            ],
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $request = new CompletionRequest(
+            [
+                new Message('system', 'System contract'),
+                new Message('user', "Select one candidate.\n\n{$payload}"),
+            ],
+            ResponseContract::Judge,
+            'judge_candidate',
+        );
+
+        $this->expectException(PromptLimitExceededException::class);
+        $this->expectExceptionMessage(
+            'Structured prompt exceeds the configured character limit after duplicate compaction.',
+        );
+
+        (new PromptBounds(1_000))->apply($request);
     }
 }

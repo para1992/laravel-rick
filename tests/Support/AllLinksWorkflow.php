@@ -38,6 +38,12 @@ final class AllLinksWorkflow
                 ['type' => 'object', 'required' => ['approved']],
                 'approval',
             )
+            ->awaitHuman(
+                'human_approval',
+                'Confirm the paid all-links smoke continuation?',
+                ['type' => 'object', 'required' => ['approved']],
+                'approval',
+            )
             ->generate('draft', candidates: 1, outputKey: 'draft', reads: ['source'])
             ->manualJudge()
             ->operation(

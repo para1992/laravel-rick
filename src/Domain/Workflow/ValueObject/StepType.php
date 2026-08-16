@@ -106,6 +106,11 @@ final readonly class StepType
         return self::fromString('wait_for_input');
     }
 
+    public static function awaitHuman(): self
+    {
+        return self::fromString('await_human');
+    }
+
     public function toString(): string
     {
         return $this->value;
