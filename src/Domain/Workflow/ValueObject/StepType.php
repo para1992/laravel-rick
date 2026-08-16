@@ -111,6 +111,16 @@ final readonly class StepType
         return self::fromString('await_human');
     }
 
+    public static function application(): self
+    {
+        return self::fromString('application');
+    }
+
+    public static function agent(): self
+    {
+        return self::fromString('agent');
+    }
+
     public function toString(): string
     {
         return $this->value;
