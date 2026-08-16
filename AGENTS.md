@@ -108,8 +108,18 @@ every class remains grouped by its concrete role, and class names ending in
   `GenerateStrategy`, `JudgeStrategy`, `EditStrategy`,
   `OutputGlueStrategy`, `UnfoldStrategy`, `OperationStrategy`,
   `QualityGateStrategy`, `GroundedVerifyStrategy`, `ParallelStrategy`,
-  `MapStrategy`, `JoinStrategy`, `BranchStrategy`, and
-  `WaitForInputStrategy`.
+  `MapStrategy`, `JoinStrategy`, `BranchStrategy`,
+  `WaitForInputStrategy`, `AwaitHumanStrategy`,
+  `ApplicationStepStrategy`, and `AgentStepStrategy`.
+- `ApplicationStepStrategy` executes a container-resolved invokable as an
+  immediate, at-least-once step. It adapts the handler to a `WorkflowState` and
+  flushes mutations back as artifacts. A throwing handler is wrapped in
+  `ApplicationStepException` (a `StepFailureBase`) so the run fails cleanly.
+- `AgentStepStrategy` adapts a `Laravel\Ai\Contracts\Agent` class into EXACTLY
+  ONE `CompletionRequest` (via `Application\Execution\Support\Llm\Agent\AgentRequestFactory`)
+  that flows through the canonical invocation accounting. Tools, approvals, and
+  multi-turn conversation are rejected with `UnsupportedAgentCapabilityException`
+  because they can issue multiple unobservable provider requests.
 - `StepStrategyRegistry` resolves strategies through the explicit
   `rick.execution.strategies` config map (`StepType` value to class). The
   Laravel container creates the selected class. Tags, tag ordering, implicit
@@ -141,6 +151,7 @@ RecoverRunRequest        -> RecoverRunPipe        -> RecoverRunResult
 ResumeRunRequest         -> ResumeRunPipe         -> ResumeRunResult
 GetRunSnapshotRequest    -> GetRunSnapshotPipe    -> GetRunSnapshotResult
 GetRunMetricsRequest     -> GetRunMetricsPipe     -> GetRunMetricsResult
+GetRunProgressRequest    -> GetRunProgressPipe    -> GetRunProgressResult
 ListRunsRequest          -> ListRunsPipe          -> ListRunsResult
 GetRunTimelineRequest    -> GetRunTimelinePipe    -> GetRunTimelineResult
 GetDeliverySnapshotRequest -> GetDeliverySnapshotPipe -> GetDeliverySnapshotResult
@@ -202,10 +213,52 @@ pendingInput()
 submitInput()
 selectCandidate()
 relayOutbox()
+fake()
 ```
 
 Internal continuation and invocation operations are available only through
 Application requests. The Facade mirrors the public API and contains no logic.
+
+### Application-first public layer
+
+The application-facing layer lives at the top-level `Rick\Laravel` namespace so
+consumers never import deep module namespaces for common workflows:
+
+- `Workflow` — an abstract base class (`name()`, `version()`, `build()`,
+  static `start()` and `definition()`). Its `build()` returns a
+  `WorkflowBuilder`.
+- `WorkflowBuilder` — the public builder, a subclass of the internal
+  `Application\Compilation\Support\Builder\WorkflowBuilder`. It adds no
+  parallel runtime; it compiles into the same `WorkflowDefinition`.
+- `WorkflowState` — a mutable facade over a run's `RunInput` and `Artifact`
+  map (dot-notation `get`/`put`/`has`/`forget`). It serializes back through the
+  canonical artifact model and never exposes mutable Domain internals.
+- `Run` — a read/action handle (`id`, `snapshot`, `metrics`, `timeline`,
+  `delivery`, `progress`, `pendingInteraction`, `resume`, `retry`) that
+  delegates to the same Application requests `Rick` uses.
+- `Testing\RickFake` — returned by `Rick::fake()`; wraps the existing
+  `FakeGateway` and asserts against the real snapshot/timeline. It is not a
+  second runtime.
+
+### Compilation rules
+
+- `WorkflowStrategy` no longer requires `ResolveStep` as the first step. A
+  workflow may begin with an `ApplicationStep`, an `AgentStep`, or any other
+  step. `RESOLVE`, when present, may still only appear first. An automatic
+  `DefineDodStep` and a trailing `OutputGlueStep` are still inserted as before.
+- The static read-before-write artifact graph validation applies only to
+  workflows built entirely from compile-time-declared LLM primitives. A
+  workflow containing an `ApplicationStep` or `AgentStep` owns a
+  runtime-dynamic artifact graph and skips that static validation.
+
+### New step types
+
+`application` and `agent` are first-class step types (`ApplicationStep` and
+`AgentStep` in `Domain\Workflow\Step`), persisted through `WorkflowStepCodec`
+as schema version 1 additive types, and resolved through the explicit
+`rick.execution.strategies` map. Application steps persist a stable handler
+reference (FQCN + version) and are at-least-once; agent steps persist the agent
+class and adapt it into exactly one audited provider request.
 
 ## Automated enforcement
 

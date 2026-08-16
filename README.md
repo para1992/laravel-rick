@@ -1,27 +1,151 @@
 # Laravel Rick
 
-Durable AI workflows for Laravel.
+Durable, tenant-aware AI workflows for Laravel.
 
-Laravel Rick turns typed workflow definitions into recoverable, tenant-aware
-runs. It supports synchronous and queued execution, Laravel AI calls, manual
-review and input, encrypted persistence, budgets, metrics, recovery, and a
-transactional outbox.
+Laravel Rick runs the durable business process around your AI calls — ordinary
+application steps, Laravel AI agents, queues, approvals, budgets, retries, and
+long waits — without repeating paid work merely because a worker crashed.
 
-[![Laravel Rick durable workflow demo](https://github.com/para1992/laravel-rick/releases/download/v0.1.0/laravel-rick-demo.gif)](https://github.com/para1992/laravel-rick-demo)
+## Why not just call Laravel AI directly?
 
-## Demo
+A single `Agent::prompt()` call is easy. A business process is not:
 
-[Run the human-in-the-loop demo](https://github.com/para1992/laravel-rick-demo)
-to generate five candidates, pause for a human decision, and continue with the
-selected result. It is free and deterministic by default, with an optional
-live Laravel AI provider mode.
+- a crash after the provider charged you should not charge you again on retry;
+- a human approval may arrive hours later, in a different process;
+- every tenant must see only its own runs;
+- costs and token budgets must be enforced even under redelivery.
+
+Rick wraps the same Laravel AI agents you already write in a persisted,
+recoverable workflow. The agent stays an agent; Rick owns the durable process
+around it.
+
+## What normal code looks like
+
+```php
+<?php
+
+namespace App\Workflows;
+
+use App\Ai\Agents\ExtractClaimFacts;
+use App\Ai\Agents\FlagRisk;
+use App\WorkflowSteps\LoadClaim;
+use App\WorkflowSteps\StoreDecision;
+use Rick\Laravel\Workflow;
+use Rick\Laravel\WorkflowBuilder;
+
+final class ClaimDecisionWorkflow extends Workflow
+{
+    public function name(): string
+    {
+        return 'claim-decision';
+    }
+
+    public function version(): string
+    {
+        return '1.0.0';
+    }
+
+    public function build(WorkflowBuilder $workflow): WorkflowBuilder
+    {
+        return $workflow
+            ->budget(maxCostUsd: '0.25')
+            ->step(LoadClaim::class, as: 'load-claim', label: 'Loading claim')
+            ->agent(ExtractClaimFacts::class, as: 'facts', label: 'Extracting claim facts')
+            ->agent(FlagRisk::class, as: 'risk', label: 'Flagging risk')
+            ->awaitHuman('approve', schema: ['approved' => ['required', 'boolean']])
+            ->step(StoreDecision::class, as: 'store-decision', label: 'Storing decision')
+            ->output('decision');
+    }
+}
+```
+
+An application step is an ordinary invokable class:
+
+```php
+<?php
+
+namespace App\WorkflowSteps;
+
+use App\Models\Claim;
+use Rick\Laravel\WorkflowState;
+
+final class LoadClaim
+{
+    public function __invoke(WorkflowState $state): void
+    {
+        $claim = Claim::query()->findOrFail($state->input('claim_id'));
+
+        $state->put('claim', [
+            'id' => $claim->id,
+            'body' => $claim->body,
+        ]);
+    }
+}
+```
+
+An agent is an ordinary Laravel AI agent:
+
+```php
+<?php
+
+namespace App\Ai\Agents;
+
+use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Promptable;
+
+final class FlagRisk implements Agent
+{
+    use Promptable;
+
+    public function instructions(): string
+    {
+        return 'Assess the legal risk of the supplied claim facts and return a short verdict.';
+    }
+}
+```
+
+Start it and drive it:
+
+```php
+$run = ClaimDecisionWorkflow::start([
+    'claim_id' => $claim->id,
+]);
+
+$progress = $run->progress();
+
+if ($run->pendingInteraction()->exists()) {
+    $run->resume();
+}
+```
+
+When a run fails, retry it without mutating history or re-paying for work that
+already succeeded:
+
+```php
+$child = $failedRun->retry();
+```
+
+## Stronger guarantees
+
+- **Immutable recovery lineage** — a failed run is never rewritten; retry
+  creates a child that points back to its parent.
+- **Reusable successful invocations** — provider work that already succeeded is
+  reused on recovery instead of being paid for again.
+- **Tenant isolation** — every run, step, and observation is tenant-scoped.
+- **Provider-attempt accounting** — queue redelivery never silently authorizes a
+  duplicate paid provider attempt.
+- **Budgets** — token and cost limits are enforced across recovery.
+- **Transactional outbox** — domain events and queued jobs are delivered exactly
+  once, after commit.
+- **Versioned, encrypted persistence** — persisted business payloads are
+  encrypted and versioned; a suspended run stays readable across deploys.
 
 ## Installation
 
 Laravel Rick requires PHP 8.3+ and Laravel 12 or 13.
 
 ```bash
-composer require rickphp/laravel-rick:^0.1
+composer require rickphp/laravel-rick:^0.4
 php artisan migrate
 ```
 
@@ -52,22 +176,15 @@ Then route the `medium` tier in `config/rick.php`:
 
 After changing `.env` or configuration, run `php artisan config:clear`.
 
-Laravel Rick routes through every text provider supported by the installed
-Laravel AI SDK. With Laravel AI 0.10, that includes OpenAI, OpenAI Compatible,
-Anthropic, Gemini, Azure OpenAI, Amazon Bedrock, Groq, xAI, DeepSeek, Mistral,
-Ollama, and OpenRouter. Structured workflows also require a selected model
-that supports structured output. OpenRouter is live-tested by this package;
-Gemini structured schemas are covered by regression fixtures. Other providers
-use the same adapter but are not yet live-tested by the package.
-
-See [Installation and configuration](docs/installation.md) for all model tiers,
-provider credentials, cost notes, and troubleshooting. Laravel AI maintains
-the current [provider support matrix](https://laravel.com/docs/13.x/ai-sdk#provider-support).
-
 ## Quick start
 
-After configuring a Laravel AI provider and model, run a prompt as a durable
-workflow:
+Generate a workflow and run a minimal durable prompt:
+
+```bash
+php artisan make:rick-workflow ContractReview
+```
+
+The lowest-friction start is still a raw prompt as a durable workflow:
 
 ```php
 use Rick\Laravel\Rick;
@@ -83,132 +200,38 @@ $run = $rick->run($workflow);
 echo $run->output();
 ```
 
-Longer workflows can generate candidates, pause for human input, run in
-parallel, enforce quality gates, verify grounding, and resume through queues.
-
-## Typical tasks
-
-The examples below assume `$rick = app(Rick::class)`.
-
-### Generate content within a fixed budget
+## Testing without provider calls
 
 ```php
-$workflow = $rick->workflow('product-description')
-    ->budget(maxCostUsd: '0.10')
-    ->resolve('Write a product description.', 'A concise description is ready.')
-    ->context('product')
-    ->generate('description', outputKey: 'description')
-    ->outputGlue('description')
-    ->build();
+use Rick\Laravel\Rick;
+use App\Workflows\ClaimDecisionWorkflow;
 
-$run = $rick->run($workflow, ['product' => $product]);
-```
+$fake = app(Rick::class)->fake();
+$fake->agent('facts', 'The claimant was in a rear-end collision.');
+$fake->agent('risk', 'Low risk.');
 
-### Process a list through queues
+$run = ClaimDecisionWorkflow::start(['claim_id' => 42]);
 
-```php
-$workflow = $rick->workflow('ticket-summaries')
-    ->resolve('Summarize every support ticket.', 'Every ticket has a summary.')
-    ->context('tickets')
-    ->map('tickets', 'items', 'rick.text', 'summaries', maxItems: 100)
-    ->outputGlue('summaries')
-    ->build();
-
-$run = $rick->schedule($workflow, ['tickets' => ['items' => $tickets]]);
-```
-
-### Generate variants and let a person choose
-
-```php
-$workflow = $rick->workflow('campaign-copy')
-    ->resolve('Write campaign copy.', 'Three distinct drafts are ready.')
-    ->draft(candidates: 3)
-    ->manualJudge()
-    ->outputGlue('draft')
-    ->build();
-
-$run = $rick->run($workflow);
-$review = $rick->pendingReview($run->id);
-$rick->selectCandidate($run->id, $review->candidates[0]->id);
-```
-
-### Generate variants and let the judge choose
-
-Use `judge()` instead of `manualJudge()` when a structured LLM invocation can
-select the best candidate and the run should complete without a human review
-barrier:
-
-```php
-$workflow = $rick->workflow('campaign-copy')
-    ->resolve('Write campaign copy.', 'The strongest draft is selected.')
-    ->draft(candidates: 3)
-    ->judge(modelPolicy: 'quality')
-    ->outputGlue('draft')
-    ->build();
-
-$run = $rick->run($workflow); // completes without pausing for review
-```
-
-### Verify an answer against supplied evidence
-
-```php
-$workflow = $rick->workflow('grounded-answer')
-    ->resolve('Answer the question from the evidence.', 'Every claim is grounded.')
-    ->context('question')
-    ->context('evidence')
-    ->generate('answer', outputKey: 'answer', reads: ['question', 'evidence'])
-    ->groundedVerify('answer', ['evidence'], output: 'verified')
-    ->outputGlue('verified')
-    ->build();
-
-$run = $rick->run($workflow, compact('question', 'evidence'));
-```
-
-### Humanize text with the built-in recipe
-
-The `rick.humanizer` recipe rewrites text to remove clusters of AI-writing
-patterns while preserving the source language and facts. It audits the draft,
-revises it, grounds it against the source, and runs a final quality gate:
-
-```php
-use Rick\Laravel\Application\Compilation\Support\Recipe\RecipeRegistry;
-
-$workflow = app(RecipeRegistry::class)->build('rick.humanizer');
-$run = $rick->run($workflow, ['source' => $text]);
-
-$humanized = $run->artifact('humanizer.output')->content;
-```
-
-To calibrate voice, opt in and provide a separate sample:
-
-```php
-$workflow = app(RecipeRegistry::class)->build('rick.humanizer', [
-    'use_voice_sample' => true,
-]);
-
-$run = $rick->run($workflow, ['source' => $text, 'voice_sample' => $authorSample]);
+$fake->assertStepRan($run, 'load-claim');
+$fake->assertStepRan($run, 'risk');
+$fake->assertAwaitingHuman($run);
+$fake->assertProviderAttempts(2);
 ```
 
 ## Documentation
 
 - [Installation and configuration](docs/installation.md)
 - [Building workflows](docs/workflows.md)
-- [Use cases](docs/use-cases.md)
-- [Manual review and external input](docs/manual-interactions.md)
-- [Queues and transactional outbox](docs/queues-outbox.md)
+- [Application steps](docs/application-steps.md)
+- [Laravel AI agents](docs/laravel-ai-agents.md)
+- [Workflow state](docs/workflow-state.md)
+- [Runs and progress](docs/runs.md)
 - [Public API](docs/public-api.md)
 - [Testing without provider calls](docs/testing.md)
-
-## Testing
-
-```bash
-composer qa
-```
+- [Queues and transactional outbox](docs/queues-outbox.md)
+- [Recovery](docs/recovery.md)
 
 ## Project
 
 - See [CHANGELOG.md](CHANGELOG.md) for release history.
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
-- Report vulnerabilities through GitHub private security advisories; see
-  [SECURITY.md](SECURITY.md).
 - Laravel Rick is released under the [MIT License](LICENSE).
